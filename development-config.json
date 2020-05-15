@@ -1,0 +1,19 @@
+{
+    "DEBUG": true,
+    "TESTING": false,
+    "PORT": 4567,
+
+    "SQLALCHEMY_DATABASE_URI" : "sqlite://///home/mantydze/toptal/toptal-api/db.sqlite",
+
+    "SQLALCHEMY_TRACK_MODIFICATIONS": false,
+    "SQLALCHEMY_ENGINE_OPTIONS": {
+        "pool_size": 32,
+        "pool_timeout": 50,
+        "pool_recycle": 300,
+        "max_overflow": 100
+    },
+
+    "SECRET_KEY": "<replace with a secret key>",
+
+    "DEBUG_TB_PROFILER_ENABLED": true
+}
