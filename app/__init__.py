@@ -1,11 +1,7 @@
 """ init.py
 """
 
-import os
-import sys
-import json
 import time
-import argparse
 import traceback
 import sqlalchemy
 
@@ -13,43 +9,10 @@ from flask import g, Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.exceptions import InternalServerError, HTTPException
-
+from app.utils.config_loader import load_config
 
 db = SQLAlchemy()
 toolbar = DebugToolbarExtension()
-
-
-def load_config():
-    """ Load config from given config_path
-
-        Returns
-        -------
-        config (dict) - parsed config JSON
-
-        Raise Exception if file not found or not valid JSON
-    """
-
-    # Initialize argument parser
-    parser = argparse.ArgumentParser()
-    # Expect one argumument
-    parser.add_argument("--config_path", required=True, type=str,
-                        default=None, help="path to configuration json file")
-    args = parser.parse_args()
-
-    # Value of argument
-    config_path = args.config_path
-
-    # Check if configuration file exists
-    if not os.path.isfile(config_path):
-        sys.exit("Configuration file [%s] does not exist" % config_path)
-
-    # Load JSON from file
-    try:
-        with open(config_path, "r") as fh:
-            return json.load(fh)
-    except Exception:
-        sys.exit("Configuration file is not a valid json")
-
 
 def handle_error(error):
     """ JSONAPI envelope for processing errors
@@ -133,9 +96,9 @@ def create_app():
         return handle_error(e)
 
     from app.modules.users.controllers import users_route
-    from app.modules.records.controllers import records_route
+    from app.modules.runs.controllers import runs_route
 
     app.register_blueprint(users_route)
-    app.register_blueprint(records_route)
+    app.register_blueprint(runs_route)
 
     return app

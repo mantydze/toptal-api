@@ -4,9 +4,10 @@
 from flask import jsonify, request
 from flask.blueprints import Blueprint
 from app.modules.users.models import User
-from app.modules.records.models import Record
-
+from app.utils.query_string import QueryString
+from app.utils.query_builder import QueryBuilder
 from werkzeug.exceptions import BadRequest
+
 
 users_route = Blueprint("users_route", __name__)
 
@@ -15,22 +16,35 @@ users_route = Blueprint("users_route", __name__)
 def get_users():
     """ Return list of Users """
 
-    return jsonify(users=User.get_all())
+    qs = QueryString(request.query_string.decode("utf-8"))
+    qs.parse()
+
+    qb = QueryBuilder(qs, User)
+    qb.build_query()
+
+    models = qb.q.all()
+    users = [model.to_dict() for model in models]    # Serialize JSON
+
+    return jsonify(data=users, links=qb.links)
 
 
 @users_route.route("/users/<int:user_id>")
 def get_user(user_id):
-    """ Return user by ID """
-    return jsonify(user=User.get_or_404(user_id).to_dict())
+    """ Return User by ID """
+
+    return jsonify(data=User.get_or_404(user_id).to_dict())
 
 
-@users_route.route("/users/<int:user_id>/records")
-def get_user_records(user_id):
-    """ Return Records by User ID """
+@users_route.route("/users/<int:user_id>/runs")
+def get_user_runs(user_id):
+    """ Return Runs by User ID """
 
-    models = Record.query.filter_by(user_id=user_id).all()  # Query SA Models
-    records = [model.to_dict() for model in models]          # Serialize JSON
-    return jsonify(records=records)
+    user = User.get_or_404(user_id)
+
+    models = user.runs.all()                        # Query SA Models
+    runs = [model.to_dict() for model in models]    # Serialize JSON
+
+    return jsonify(data=runs)
 
 
 @users_route.route("/users", methods=["POST"])
@@ -52,4 +66,4 @@ def update_user(user_id):
 
     # user.update(input_data)
 
-    return jsonify(user=user.to_dict())
+    return jsonify(data=user.to_dict())
