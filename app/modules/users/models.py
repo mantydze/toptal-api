@@ -1,5 +1,9 @@
+
+import hashlib
+
 from flask import url_for
 from sqlalchemy.ext.hybrid import hybrid_property
+
 from app import db
 from app.utils.base_mixin import BaseMixin
 
@@ -36,3 +40,34 @@ class User(db.Model, BaseMixin):
     def base_url(self):
         """ URL to a route which returns list of objects """
         return url_for("users_route.get_users", _external=True)
+
+    @staticmethod
+    def create(input_json):
+        """ Create new User. Set default role to user and encode password
+
+            Parameters
+            ----------
+            input_json(dict): dictionary containing username and password
+
+            Returns
+            -------
+            user (SAModel): newly created instance of User
+        """
+
+        try:
+            # Default Role is user
+            input_json["role"] = "user"
+
+            # Do not store passwords in plaintext, encode with sha256
+            phash = hashlib.sha256(input_json["password"].encode('utf-8'))
+            input_json["password"] = phash.hexdigest()
+
+            user = User(**input_json)
+
+            db.session.add(user)
+            db.session.commit()
+
+            return user
+        except:
+            db.session.rollback()
+            raise

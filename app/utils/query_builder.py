@@ -7,6 +7,15 @@ from werkzeug.exceptions import InternalServerError, BadRequest
 
 class QueryBuilder:
 
+    OPERATOR_FUNCTIONS = {
+            "eq": lambda x, y: x == y,
+            "ne": lambda x, y: x != y,
+            "lt": lambda x, y: x < y,
+            "le": lambda x, y: x <= y,
+            "gt": lambda x, y: x > y,
+            "ge": lambda x, y: x >= y
+        }
+
     def __init__(self, qs, cls):
         """ Parameters
             ----------
@@ -18,20 +27,9 @@ class QueryBuilder:
         self.q = None
         self.links = None
 
-    def build_query(self):
-        """ Builds a SA query using QueryString.
-            Applies sorting, filtering, pagination
+    def _apply_sort(self):
+        """ Applies sorting to a query """
 
-            Returns
-            -------
-            SA query
-        """
-
-        # Create query
-        q = self.cls.query
-
-        # -------------------------------------------------------------------------
-        # Sorting
         for field in self.qs.sort:
             sort_func = asc
 
@@ -40,21 +38,13 @@ class QueryBuilder:
                 sort_func = desc
 
             # Apply sorting to a query
-            q = q.order_by(sort_func(field))
+            self.q = self.q.order_by(sort_func(field))
 
-        # -------------------------------------------------------------------------
-        # Filtering
-
-        operator_function = {
-            "eq": lambda x, y: x == y,
-            "ne": lambda x, y: x != y,
-            "lt": lambda x, y: x < y,
-            "le": lambda x, y: x <= y,
-            "gt": lambda x, y: x > y,
-            "ge": lambda x, y: x >= y
-        }
+    def _apply_filter(self):
+        """ Applies filter to a query """
 
         def build_criterion(expression):
+            """ Helper function to asseble chain of filters """
 
             op = expression[1].lower()
 
@@ -65,9 +55,9 @@ class QueryBuilder:
 
                 op_func = or_ if op == "or" else and_
 
-            elif op in operator_function:
+            elif op in QueryBuilder.OPERATOR_FUNCTIONS:
                 # End of branch, actual fitler against value is here
-                op_func = operator_function.get(op)
+                op_func = QueryBuilder.OPERATOR_FUNCTIONS.get(op)
 
                 # Get column from SA model
                 attr_name = expression[0]
@@ -91,14 +81,14 @@ class QueryBuilder:
 
         # Apply all filters if any
         if self.qs.filter:
-            q = q.filter(build_criterion(self.qs.filter))
+            self.q = self.q.filter(build_criterion(self.qs.filter))
+
+    def _apply_pagination(self):
+        """ Applies Pagination to a query.
+            Constructs links to first, next, previous, last pages """
 
         # Count = Total matches.
-        # In come cases Count might be very SLOW and might need to be excluded
-        total_matches = -1
-
-        total_matches = q.order_by(None).count()
-        # self.meta["total_matches"] = total_matches # FIXME
+        total_matches = self.q.order_by(None).count()
 
         if not hasattr(self.cls, "base_url"):
             raise InternalServerError("""There is a problem with class '{}'.
@@ -111,39 +101,42 @@ class QueryBuilder:
         base_qs = self.qs.get_querystring(include_pagination=False)
 
         if not base_qs:
-            base_qs = "?page[size]=%d" % self.qs.page["size"]
+            base_qs = "?page[size]={}".format(self.qs.page["size"])
         else:
-            base_qs += "&page[size]=%d" % self.qs.page["size"]
+            base_qs += "&page[size]={}".format(self.qs.page["size"])
 
-        link_first = None
-        link_prev = None
-        link_next = None
-        link_last = None
+        self.links = {
+            "first": None,
+            "prev": None,
+            "next": None,
+            "last": None
+        }
 
-        last_page = int(
-            math.ceil((total_matches*1.0) / self.qs.page["size"]))
+        last_page = int(math.ceil((total_matches*1.0) / self.qs.page["size"]))
 
+        base = base_url + base_qs
         if self.qs.page["number"] > 1:
-            link_first = base_url + base_qs + "&page[number]=1"
-            link_prev = base_url + base_qs + \
-                "&page[number]=%d" % (self.qs.page["number"] - 1)
+            self.links["first"] = base + "&page[number]=1"
+            self.links["prev"] = base + "&page[number]={}".format((self.qs.page["number"] - 1))
 
         if self.qs.page["number"] < last_page:
-            link_last = base_url + base_qs + "&page[number]=%d" % last_page
-            link_next = base_url + base_qs + \
-                "&page[number]=%d" % (self.qs.page["number"] + 1)
+            self.links["last"] = base + "&page[number]={}".format(last_page)
+            self.links["next"] = base + "&page[number]={}".format((self.qs.page["number"] + 1))
 
-        self.links = {}
-        self.links["first"] = link_first
-        self.links["prev"] = link_prev
-        self.links["next"] = link_next
-        self.links["last"] = link_last
+        # Apply Pagination
+        offset = (self.qs.page["number"] - 1) * self.qs.page["size"]
+        self.q = self.q.limit(self.qs.page["size"]).offset(offset)
 
-        # -------------------------------------------------------------------------
-        # Pagination
-        q = q.limit(self.qs.page["size"]).offset(
-            (self.qs.page["number"]-1)*self.qs.page["size"])
+    def build_query(self):
+        """ Builds a SA query using QueryString.
+            Applies sorting, filtering, pagination
 
-        # -------------------------------------------------------------------------
+            Returns
+            -------
+            SA query
+        """
 
-        self.q = q
+        self.q = self.cls.query
+        self._apply_sort()
+        self._apply_filter()
+        self._apply_pagination()

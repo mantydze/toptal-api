@@ -1,4 +1,4 @@
-""" downtimes/controllers.py
+""" users/controllers.py
 """
 
 from flask import jsonify, request

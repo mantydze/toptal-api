@@ -5,7 +5,7 @@ import time
 import traceback
 import sqlalchemy
 
-from flask import g, Flask, render_template, request, jsonify
+from flask import g, Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.exceptions import InternalServerError, HTTPException
@@ -13,6 +13,7 @@ from app.utils.config_loader import load_config
 
 db = SQLAlchemy()
 toolbar = DebugToolbarExtension()
+
 
 def handle_error(error):
     """ JSONAPI envelope for processing errors
@@ -95,9 +96,11 @@ def create_app():
         e = InternalServerError
         return handle_error(e)
 
+    from app.modules.auth.controllers import auth_route
     from app.modules.users.controllers import users_route
     from app.modules.runs.controllers import runs_route
 
+    app.register_blueprint(auth_route)
     app.register_blueprint(users_route)
     app.register_blueprint(runs_route)
 
