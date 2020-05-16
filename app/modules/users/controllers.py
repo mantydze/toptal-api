@@ -3,6 +3,7 @@
 
 from flask import jsonify, request
 from flask.blueprints import Blueprint
+from flask_login import login_required
 from app.modules.users.models import User
 from app.utils.query_string import QueryString
 from app.utils.query_builder import QueryBuilder
@@ -13,6 +14,7 @@ users_route = Blueprint("users_route", __name__)
 
 
 @users_route.route("/users")
+@login_required
 def get_users():
     """ Return list of Users """
 

@@ -4,6 +4,7 @@
 import time
 import traceback
 import sqlalchemy
+import flask_login
 
 from flask import g, Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -13,6 +14,8 @@ from app.utils.config_loader import load_config
 
 db = SQLAlchemy()
 toolbar = DebugToolbarExtension()
+login_manager = flask_login.LoginManager()
+
 
 
 def handle_error(error):
@@ -46,6 +49,9 @@ def handle_error(error):
 
 def create_app():
 
+    # Prevent circular import
+    from app.modules.users.models import User
+
     app = Flask(__name__)
 
     for cls in HTTPException.__subclasses__():
@@ -62,31 +68,21 @@ def create_app():
     # SQLAlchemy
     db.init_app(app)
 
+    # Login Manager
+    login_manager.init_app(app)
+
     # Index page
     @app.route("/")
     def index():
         """ Index page """
-
         return jsonify({"hello": "world"})
-
-    @app.before_request
-    def app_before_request():
-        """ """
-
-        # Create a method to measure time taken for a request
-        g.req_start = time.time()
-        g.request_time = lambda: round((time.time() - g.req_start) * 1000.0, 2)
-
-        # Print request payload of every request which is manipulating data
-        if request.method in ["PUT", "POST", "DELETE"]:
-            print(request.data)
 
     @app.errorhandler(sqlalchemy.exc.OperationalError)
     def handle_validation_error(e):
         """ Database Error """
         traceback.print_exc()
         e.code = 400
-        e.description = "Action is not supported for this database dialect."
+        e.description = "Database Error"
         return handle_error(e)
 
     @app.errorhandler(Exception)

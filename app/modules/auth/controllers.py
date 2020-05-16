@@ -4,6 +4,9 @@
 from flask import jsonify, request
 from flask.blueprints import Blueprint
 
+from flask_login import login_required, login_user, logout_user
+
+from app import login_manager
 from app.modules.users.models import User
 from app.modules.auth.schema import schema_register_user, schema_login_user
 from app.utils.jsonschema_validator import validate
@@ -37,14 +40,37 @@ def register():
     return jsonify(data=user.to_dict())
 
 
+@login_manager.user_loader
+def user_loader(username):
+    """ Find User by given username
+        Returns
+        ------
+        User (SAModel) if found. Otherwise None as Flask-Login requires
+    """
+    return User.query.filter_by(username=username).one_or_none()
+
+
 @auth_route.route("/login", methods=["POST"])
 def login():
-    """ Login User """
 
-    raise NotImplemented()
+    input_json = request.get_json(force=True)
 
-@auth_route.route("/logout", methods=["GET"])
+    if not isinstance(input_json, dict):
+        raise BadRequest("Request data must be a valid JSON")
+
+    user = User.query.filter_by(username=input_json["username"]).one_or_none()
+
+    if user and (user.password == User.encrypt_str(input_json["password"])):
+        login_user(user)
+    else:
+        # Do not tell user what was wrong exactly to prevent password guessing
+        raise BadRequest("Invalid login credentials")
+
+    return "", 204
+
+
+@auth_route.route("/logout")
+@login_required
 def logout():
-    """ Logout User """
-
-    raise NotImplemented()
+    logout_user()
+    return '', 204
