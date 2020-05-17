@@ -20,17 +20,15 @@ auth_route = Blueprint("auth_route", __name__)
 def register():
     """ Register new User """
 
+    # Get input JSON or raise BadRequest
     input_json = request.get_json(force=True)
 
-    if not isinstance(input_json, dict):
-        raise BadRequest("Request data must be a valid JSON")
-
-    # Validate input JSON if received data contains required attributes
+    # Validate input JSON or raise ValidationError
     validate(input_json, schema_register_user)
 
     # Check if username is not already taken
     username = input_json["username"]
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=username).one_or_none()
 
     if user:
         raise BadRequest("Username '{}' is already taken".format(username))
@@ -45,18 +43,20 @@ def user_loader(username):
     """ Find User by given username
         Returns
         ------
-        User (SAModel) if found. Otherwise None as Flask-Login requires
-    """
+        User (SAModel) if found. Otherwise None as Flask-Login requires """
+
     return User.query.filter_by(username=username).one_or_none()
 
 
 @auth_route.route("/login", methods=["POST"])
 def login():
+    """ Login User with given credentials """
 
+    # Get input JSON or raise BadRequest
     input_json = request.get_json(force=True)
 
-    if not isinstance(input_json, dict):
-        raise BadRequest("Request data must be a valid JSON")
+    # Validate input JSON or raise ValidationError
+    validate(input_json, schema_login_user)
 
     user = User.query.filter_by(username=input_json["username"]).one_or_none()
 
@@ -72,5 +72,6 @@ def login():
 @auth_route.route("/logout")
 @login_required
 def logout():
+    """ Logout current user """
     logout_user()
     return '', 204

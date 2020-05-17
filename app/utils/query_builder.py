@@ -24,7 +24,7 @@ class QueryBuilder:
 
         self.qs = qs
         self.cls = cls
-        self.q = None
+        self.q = self.cls.query
         self.links = None
 
     def _apply_sort(self):
@@ -127,7 +127,7 @@ class QueryBuilder:
         offset = (self.qs.page["number"] - 1) * self.qs.page["size"]
         self.q = self.q.limit(self.qs.page["size"]).offset(offset)
 
-    def build_query(self):
+    def build_query(self, apply_pagination=True):
         """ Builds a SA query using QueryString.
             Applies sorting, filtering, pagination
 
@@ -136,7 +136,8 @@ class QueryBuilder:
             SA query
         """
 
-        self.q = self.cls.query
         self._apply_sort()
         self._apply_filter()
-        self._apply_pagination()
+
+        if apply_pagination:
+            self._apply_pagination()

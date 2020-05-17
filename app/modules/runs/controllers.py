@@ -3,6 +3,7 @@
 
 from flask import jsonify, request
 from flask.blueprints import Blueprint
+from flask_login import login_required, current_user
 from app.modules.runs.models import Run
 from app.utils.query_string import QueryString
 from app.utils.query_builder import QueryBuilder
@@ -11,6 +12,7 @@ runs_route = Blueprint("runs_route", __name__)
 
 
 @runs_route.route("/runs")
+@login_required
 def get_runs():
     """ Return list of Runs """
 
@@ -27,6 +29,7 @@ def get_runs():
 
 
 @runs_route.route("/runs/<int:run_id>")
+@login_required
 def get_run(run_id=None):
     """ Return Run by ID """
 

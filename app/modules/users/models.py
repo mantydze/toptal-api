@@ -6,14 +6,15 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from app import db
 from app.utils.base_mixin import BaseMixin
-
+from app.utils.roles import Role
 
 class User(db.Model, BaseMixin):
 
     __tablename__ = "USER"
 
     # List of attributes to serialize to JSON
-    attrs = ["user_id", "username", "role", "links"]
+    public = ["user_id", "username", "links", "role"]
+    private = ["role", "password", "authenticated"]
 
     user_id = db.Column(db.Integer, nullable=False, primary_key=True)
     username = db.Column(db.String, nullable=False, unique=True, index=True)
@@ -25,21 +26,21 @@ class User(db.Model, BaseMixin):
 
     @hybrid_property
     def links(self):
-        """ Links """
+        """Links"""
 
         links = {}
         links["self"] = url_for("users_route.get_user",
                                 user_id=self.user_id,
                                 _external=True)
-        links["runs"] = url_for("users_route.get_user_runs",
-                                user_id=self.user_id,
-                                _external=True)
+
+        runs = url_for("runs_route.get_runs", _external=True)
+        links["runs"] = "{}?filter=(user_id eq {})".format(runs, self.user_id)
 
         return links
 
     @hybrid_property
     def base_url(self):
-        """ URL to a route which returns list of objects """
+        """URL to a route which returns list of objects. Used for pagination"""
         return url_for("users_route.get_users", _external=True)
 
     @staticmethod
@@ -48,7 +49,7 @@ class User(db.Model, BaseMixin):
         return hashlib.sha256(s.encode('utf-8')).hexdigest()
 
     @staticmethod
-    def create(input_json):
+    def create(input_json, save_commit=True):
         """ Create new User. Set default role to user and encode password
 
             Parameters
@@ -62,15 +63,16 @@ class User(db.Model, BaseMixin):
 
         try:
             # Default Role is user
-            input_json["role"] = "user"
-
-            # Do not store passwords in plaintext, encode with sha256
-            input_json["password"] = User.encrypt_str(input_json["password"])
+            input_json["role"] = Role.USER
 
             user = User(**input_json)
 
-            db.session.add(user)
-            db.session.commit()
+            # Do not store passwords in plaintext, encode with sha256
+            user.password = User.encrypt_str(input_json["password"])
+
+            if save_commit:
+                db.session.add(user)
+                db.session.commit()
 
             return user
         except:
@@ -81,20 +83,16 @@ class User(db.Model, BaseMixin):
 
     def is_active(self):
         """ Returns always True. Assume that all users are active """
-        print("kviecia is_active ")
         return True
 
     def get_id(self):
         """ Returns unique identifier """
-        print("kviecia get_id ")
         return self.username
 
     def is_authenticated(self):
         """ Returns True if the user is authenticated """
-        print("kviecia is_auth")
         return self.authenticated
 
     def is_anonymous(self):
         """ Anonymous usage of this API is not supported """
-        print("kviecia is_anon ")
         return False

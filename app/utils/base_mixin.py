@@ -16,8 +16,8 @@ class BaseMixin(object):
         """ Convert SA Model into a dictionary. Does not serialize relationships
         """
 
-        # List attributes to serialize. Use all available if not specified
-        attrs = getattr(self.__class__, "attrs", self.__mapper__.c.keys())
+        # List public attributes to export. Use all available if not specified
+        attrs = getattr(self.__class__, "public", self.__mapper__.c.keys())
 
         result = {}
 

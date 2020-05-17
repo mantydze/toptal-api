@@ -15,5 +15,6 @@
 
     "SECRET_KEY": "<replace with a secret key>",
 
-    "DEBUG_TB_PROFILER_ENABLED": true
+    "DEBUG_TB_PROFILER_ENABLED": true,
+    "DEBUG_TB_INTERCEPT_REDIRECTS": false
 }
