@@ -48,9 +48,6 @@ def handle_error(error):
 
 def create_app():
 
-    # Prevent circular import
-    from app.modules.users.models import User
-
     app = Flask(__name__)
 
     for cls in HTTPException.__subclasses__():

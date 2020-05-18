@@ -12,7 +12,7 @@ class TestUser(unittest.TestCase):
         cls.app = create_app()
 
         cls.input_json = {"username": "username123", "password": "password123"}
-        cls.user = User.create(cls.input_json, save_commit=False)
+        cls.user = User.create(cls.input_json, save=False, commit=False)
 
     def test_01_check_role(self):
         assert self.user.role == Role.USER

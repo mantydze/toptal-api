@@ -50,13 +50,14 @@ class User(db.Model, BaseMixin):
         return hashlib.sha256(s.encode('utf-8')).hexdigest()
 
     @staticmethod
-    def create(input_json, save_commit=True):
+    def create(input_json, save=True, commit=True):
         """ Create new User. Set default role to user and encode password
 
             Parameters
             ----------
             input_json(dict): dictionary containing username and password
-            save_commit(bool): should model be saved or not
+            save(bool): should model be saved or not
+            commit(bool): should model be commited or not
 
             Returns
             -------
@@ -72,8 +73,10 @@ class User(db.Model, BaseMixin):
             # Do not store passwords in plaintext, encode with sha256
             user.password = User.encrypt_str(input_json["password"])
 
-            if save_commit:
+            if save:
                 db.session.add(user)
+
+            if commit:
                 db.session.commit()
 
             return user
@@ -82,13 +85,13 @@ class User(db.Model, BaseMixin):
             db.session.rollback()
             raise
 
-    def update(self, input_json, save_commit=True):
+    def update(self, input_json, commit=True):
         """ Create new Run. Fetch weather
 
             Parameters
             ----------
             input_json(dict): dictionary containing attributes to update
-            save_commit(bool): should model be saved or not
+            commit(bool): should model be commited or not
         """
 
         try:
@@ -98,7 +101,7 @@ class User(db.Model, BaseMixin):
             if "password" in input_json:
                 self.password = User.encrypt_str(input_json["password"])
 
-            if save_commit:
+            if commit:
                 db.session.commit()
 
         except Exception:

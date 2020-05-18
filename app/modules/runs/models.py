@@ -44,13 +44,14 @@ class Run(db.Model, BaseMixin):
         return url_for("runs_route.get_runs", _external=True)
 
     @staticmethod
-    def create(input_json, save_commit=True):
+    def create(input_json, save=True, commit=True):
         """ Create new Run. Fetch weather
 
             Parameters
             ----------
             input_json(dict): dictionary containing username and password
-            save_commit(bool): should model be saved or not
+            save(bool): should model be saved or not
+            commit(bool): should model be commited or not
 
             Returns
             -------
@@ -69,8 +70,10 @@ class Run(db.Model, BaseMixin):
 
             run = Run(**input_json)
 
-            if save_commit:
+            if save:
                 db.session.add(run)
+
+            if commit:
                 db.session.commit()
 
             return run
@@ -78,13 +81,13 @@ class Run(db.Model, BaseMixin):
             db.session.rollback()
             raise
 
-    def update(self, input_json, save_commit=True):
+    def update(self, input_json, commit=True):
         """ Update Run. Fetch weather if coordinates are updated
 
             Parameters
             ----------
             input_json(dict): dictionary containing attributes to update
-            save_commit(bool): should model be saved or not
+            commit(bool): should model be commited or not
         """
 
         try:
@@ -109,7 +112,7 @@ class Run(db.Model, BaseMixin):
             if coords_changed or self.weather is None:
                 self.weather = get_weather(self.latitude, self.longitude)
 
-            if save_commit:
+            if commit:
                 db.session.commit()
 
         except Exception:
