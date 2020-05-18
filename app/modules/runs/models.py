@@ -79,16 +79,12 @@ class Run(db.Model, BaseMixin):
             raise
 
     def update(self, input_json, save_commit=True):
-        """ Create new Run. Fetch weather
+        """ Update Run. Fetch weather if coordinates are updated
 
             Parameters
             ----------
-            input_json(dict): dictionary containing username and password
+            input_json(dict): dictionary containing attributes to update
             save_commit(bool): should model be saved or not
-
-            Returns
-            -------
-            user (SAModel): newly created instance of Run
         """
 
         try:
@@ -121,7 +117,7 @@ class Run(db.Model, BaseMixin):
             raise
 
     def delete(self):
-        """ Self delete """
+        """ Delete current Run """
 
         try:
             db.session.delete(self)

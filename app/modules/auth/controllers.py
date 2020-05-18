@@ -8,34 +8,12 @@ from flask_login import login_required, login_user, logout_user
 
 from app import login_manager
 from app.modules.users.models import User
-from app.modules.auth.schema import schema_register_user, schema_login_user
+from app.modules.auth.schema import schema_login_user
 from app.utils.jsonschema_validator import validate
 
 from werkzeug.exceptions import BadRequest
 
 auth_route = Blueprint("auth_route", __name__)
-
-
-@auth_route.route("/register", methods=["POST"])
-def register():
-    """ Register new User """
-
-    # Get input JSON or raise BadRequest
-    input_json = request.get_json(force=True)
-
-    # Validate input JSON or raise ValidationError
-    validate(input_json, schema_register_user)
-
-    # Check if username is not already taken
-    username = input_json["username"]
-    user = User.query.filter_by(username=username).one_or_none()
-
-    if user:
-        raise BadRequest("Username '{}' is already taken".format(username))
-
-    user = User.create(input_json)
-
-    return jsonify(data=user.to_dict())
 
 
 @login_manager.user_loader

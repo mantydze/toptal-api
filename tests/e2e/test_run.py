@@ -1,3 +1,4 @@
+import string
 import random
 import unittest
 import datetime
@@ -10,43 +11,33 @@ class TestRun(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = create_app()
-        cls.client = app.test_client()
+        cls.app = create_app()
+        cls.client = cls.app.test_client()
 
-        with app.app_context():
+        with cls.app.app_context():
             db.drop_all()
             db.create_all()
 
-            # Create 10 users for each role
-            for role in Role.roles():
-                for i in range(1, 11):
-                    data = {"username": "{}{}".format(role, i),
-                            "password": "password{}".format(i)}
+    def create_manager(self, login=True):
+        return self.create_user(Role.MANAGER, login)
 
-                    cls.client.post("/register", json=data)
+    def create_admin(self, login=True):
+        return self.create_user(Role.ADMIN, login)
 
-                # Default role is USER, set MANAGER and ADMIN roles
-                db.engine.execute("""
+    def create_user(self, role=Role.USER, login=True):
+        name = "".join(random.choice(string.ascii_letters) for i in range(8))
+        data = {"username": name, "password": name}
+        user = self.client.post("/register", json=data)
+
+        with self.app.app_context():
+            db.engine.execute("""
                     UPDATE USER
-                    SET ROLE="{0}"
-                    WHERE USERNAME LIKE '%{0}%'""".format(role))
+                    SET ROLE="{role}"
+                    WHERE USERNAME = '{name}'""".format(role=role, name=name))
 
-    def login_user(self):
-        self.client.get("/logout")
-        user_data = {"username": "user1", "password": "password1"}
-        user = self.client.post("/login", json=user_data)
-        return user.get_json()
+        if login:
+            user = self.client.post("/login", json=data)
 
-    def login_manager(self):
-        self.client.get("/logout")
-        user_data = {"username": "manager1", "password": "password1"}
-        user = self.client.post("/login", json=user_data)
-        return user.get_json()
-
-    def login_admin(self):
-        self.client.get("/logout")
-        user_data = {"username": "admin1", "password": "password1"}
-        user = self.client.post("/login", json=user_data)
         return user.get_json()
 
     def test_01_create_run_unauth(self):
@@ -70,7 +61,7 @@ class TestRun(unittest.TestCase):
     def test_02_create_run_user_self(self):
         """ Login as USER and create own Run """
 
-        user = self.login_user()
+        user = self.create_user()
 
         run_data = {
             "user_id": user["data"]["user_id"],
@@ -86,13 +77,13 @@ class TestRun(unittest.TestCase):
         assert result.status_code == 200
 
     def test_03_create_run_user_other(self):
-        """ Login as USER and create Run for other User """
+        """ Login as USER and create Run for other USER """
 
-        manager = self.login_manager()
-        self.login_user()
+        user = self.create_user(login=False)
+        self.create_user()
 
         run_data = {
-            "user_id": manager["data"]["user_id"],
+            "user_id": user["data"]["user_id"],
             "date": datetime.date.today().isoformat(),
             "duration": random.randint(100, 1000),
             "distance": random.randint(100, 1000),
@@ -107,8 +98,8 @@ class TestRun(unittest.TestCase):
     def test_04_create_run_admin_other(self):
         """ Login as ADMIN and create Run for other User """
 
-        user = self.login_user()
-        self.login_admin()
+        user = self.create_user(login=False)
+        self.create_admin()
 
         run_data = {
             "user_id": user["data"]["user_id"],
@@ -126,7 +117,7 @@ class TestRun(unittest.TestCase):
     def test_05_create_run_invalid_data(self):
         """ Login as USER and create Run with invalid data """
 
-        user = self.login_user()
+        user = self.create_user()
 
         run_data = {
             "user_id": user["data"]["user_id"],
@@ -144,7 +135,7 @@ class TestRun(unittest.TestCase):
     def test_06_create_run_admin_nonexist(self):
         """ Login as ADMIN and create Run for non existing User """
 
-        self.login_admin()
+        self.create_admin()
 
         run_data = {
             "user_id": 99999999,
@@ -162,7 +153,3 @@ class TestRun(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         pass
-
-
-if __name__ == "__main__":
-    unittest.main()

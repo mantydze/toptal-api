@@ -1,3 +1,5 @@
+import string
+import random
 import unittest
 
 from app import create_app, db
@@ -8,50 +10,262 @@ class TestUser(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = create_app()
-        cls.client = app.test_client()
+        cls.app = create_app()
+        cls.client = cls.app.test_client()
 
-        with app.app_context():
+        with cls.app.app_context():
             db.drop_all()
             db.create_all()
 
-            # Create 10 users for each role
-            for role in Role.roles():
-                for i in range(1, 11):
-                    data = {"username": "{}{}".format(role, i),
-                            "password": "password{}".format(i)}
+    def create_manager(self, login=True):
+        return self.create_user(Role.MANAGER, login)
 
-                    cls.client.post("/register", json=data)
+    def create_admin(self, login=True):
+        return self.create_user(Role.ADMIN, login)
 
-                # Default role is USER, set MANAGER and ADMIN roles
-                db.engine.execute("""
+    def create_user(self, role=Role.USER, login=True):
+        name = "".join(random.choice(string.ascii_letters) for i in range(8))
+        data = {"username": name, "password": name}
+        user = self.client.post("/register", json=data)
+
+        with self.app.app_context():
+            db.engine.execute("""
                     UPDATE USER
-                    SET ROLE="{0}"
-                    WHERE USERNAME LIKE '%{0}%'""".format(role))
+                    SET ROLE="{role}"
+                    WHERE USERNAME = '{name}'""".format(role=role, name=name))
 
-    def test_01_simple_user(self):
-        """ login as simple user and access enpoind /users """
+        if login:
+            user = self.client.post("/login", json=data)
 
-        self.client.get("/logout")
+        return user.get_json()
 
-        data = {"username": "user1", "password": "password1"}
-        self.client.post("/login", json=data)
+    def test_010_user_view_users(self):
+        """ Login as USER and access endpoint /users """
 
+        self.create_user()
         result = self.client.get("/users")
-
         assert result.status_code == 302
 
-    def test_02_simple_user_follow_redirect(self):
-        """ login as simple user and access enpoind /users """
+    def test_011_user_view_users(self):
+        """ Login as USER and access endpoint /users """
 
-        self.client.get("/logout")
-
-        data = {"username": "user1", "password": "password1"}
-        self.client.post("/login", json=data)
-
+        self.create_user()
         result = self.client.get("/users", follow_redirects=True)
+        assert result.status_code == 200
+
+    def test_020_manager_view_users(self):
+        """ Login as MANAGER and access endpoint /users.
+            Should receive only USERS and self
+        """
+
+        manager = self.create_manager()
+        manager_id = manager["data"]["user_id"]
+
+        result = self.client.get("/users")
+        rows = result.get_json()["data"]
+
+        # Result set must be not empty
+        assert len(rows) > 0
+
+        for row in rows:
+            # Resultset must containt only one manager - self
+            if row["role"] == Role.MANAGER:
+                assert row["user_id"] == manager_id
+            else:
+                # All remaining rows must containt USERs only
+                assert row["role"] == Role.USER
+
+    def test_030_user_update_self(self):
+        """ Login as USER and update self """
+
+        user = self.create_user()
+        user_id = user["data"]["user_id"]
+        data = {"username": "user11", "password": "password11"}
+        result = self.client.put("/users/{}".format(user_id), json=data)
+        result_user = result.get_json()["data"]
 
         assert result.status_code == 200
+        assert result_user["username"] == data["username"]
+
+    def test_031_user_login_after_update(self):
+        """ Folloup on 041. Login with new credentials """
+
+        data = {"username": "user11", "password": "password11"}
+        result = self.client.post("/login", json=data)
+        assert result.status_code == 200
+
+    def test_032_user_update_user(self):
+        """ Login as USER and update USER """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+        self.create_user()
+        data = {"username": "user111", "password": "password11"}
+        result = self.client.put("/users/{}".format(user_id), json=data)
+
+        assert result.status_code == 403
+
+    def test_040_manager_update_user(self):
+        """ Login as MANAGER and update USER """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+        self.create_manager()
+        data = {"username": "user22", "password": "password22"}
+        result = self.client.put("/users/{}".format(user_id), json=data)
+        updated_user = result.get_json()["data"]
+
+        assert result.status_code == 200
+        assert updated_user["username"] == data["username"]
+
+    def test_041_manager_update_manager(self):
+        """ Login as MANAGER and update MANAGER """
+
+        manager = self.create_manager(login=False)
+        manager_id = manager["data"]["user_id"]
+        self.create_manager()
+        data = {"username": "manager11", "password": "password11"}
+        result = self.client.put("/users/{}".format(manager_id), json=data)
+
+        assert result.status_code == 403
+
+    def test_050_admin_update_user(self):
+        """ Login as ADMIN and update USER """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+        self.create_admin()
+        data = {"username": "user33", "password": "password33"}
+        result = self.client.put("/users/{}".format(user_id), json=data)
+        updated_user = result.get_json()["data"]
+
+        assert result.status_code == 200
+        assert updated_user["username"] == data["username"]
+
+    def test_051_admin_update_manager(self):
+        """ Login as ADMIN and update MANAGER """
+
+        manager = self.create_manager(login=False)
+        manager_id = manager["data"]["user_id"]
+        self.create_admin()
+        data = {"username": "manager55", "password": "password55"}
+        result = self.client.put("/users/{}".format(manager_id), json=data)
+        updated_manager = result.get_json()["data"]
+
+        assert result.status_code == 200
+        assert updated_manager["username"] == data["username"]
+
+    def test_052_admin_update_admin(self):
+        """ Login as ADMIN and update ADMIN """
+
+        admin = self.create_admin(login=False)
+        admin_id = admin["data"]["user_id"]
+        self.create_admin()
+        data = {"username": "admin55", "password": "password55"}
+        result = self.client.put("/users/{}".format(admin_id), json=data)
+        updated_admin = result.get_json()["data"]
+
+        assert result.status_code == 200
+        assert updated_admin["username"] == data["username"]
+
+    def test_060_user_delete_self(self):
+        """ Login as USER and delete self """
+
+        user = self.create_user()
+        user_id = user["data"]["user_id"]
+        result = self.client.delete("/users/{}".format(user_id))
+
+        assert result.status_code == 204
+
+    def test_061_user_delete_user(self):
+        """ Login as USER and delete USER """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+        self.create_user()
+        result = self.client.delete("/users/{}".format(user_id))
+
+        assert result.status_code == 403
+
+    def test_062_user_delete_manager(self):
+        """ Login as USER and delete MANAGER """
+
+        manager = self.create_manager(login=False)
+        manager_id = manager["data"]["user_id"]
+        self.create_user()
+        result = self.client.delete("/users/{}".format(manager_id))
+
+        assert result.status_code == 403
+
+    def test_063_user_delete_admin(self):
+        """ Login as USER and delete ADMIN """
+
+        admin = self.create_admin(login=False)
+        admin_id = admin["data"]["user_id"]
+        self.create_user()
+        result = self.client.delete("/users/{}".format(admin_id))
+
+        assert result.status_code == 403
+
+    def test_071_manager_delete_user(self):
+        """ Login as MANAGER and delete USER """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+        self.create_manager()
+        result = self.client.delete("/users/{}".format(user_id))
+
+        assert result.status_code == 204
+
+    def test_072_manager_delete_manager(self):
+        """ Login as MANAGER and delete MANAGER """
+
+        manager = self.create_manager(login=False)
+        manager_id = manager["data"]["user_id"]
+        self.create_manager()
+        result = self.client.delete("/users/{}".format(manager_id))
+
+        assert result.status_code == 403
+
+    def test_073_manager_delete_admin(self):
+        """ Login as MANAGER and delete ADMIN """
+
+        admin = self.create_admin(login=False)
+        admin_id = admin["data"]["user_id"]
+        self.create_manager()
+        result = self.client.delete("/users/{}".format(admin_id))
+
+        assert result.status_code == 403
+
+    def test_080_admin_delete_user(self):
+        """ Login as ADMIN and delete USER """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+        self.create_manager()
+        result = self.client.delete("/users/{}".format(user_id))
+
+        assert result.status_code == 204
+
+    def test_081_admin_delete_manager(self):
+        """ Login as ADMIN and delete MANAGER """
+
+        manager = self.create_manager(login=False)
+        manager_id = manager["data"]["user_id"]
+        self.create_admin()
+        result = self.client.delete("/users/{}".format(manager_id))
+
+        assert result.status_code == 204
+
+    def test_082_admin_delete_admin(self):
+        """ Login as ADMIN and delete ADMIN """
+
+        admin = self.create_admin(login=False)
+        admin_id = admin["data"]["user_id"]
+        self.create_admin()
+        result = self.client.delete("/users/{}".format(admin_id))
+
+        assert result.status_code == 204
 
     @classmethod
     def tearDownClass(cls):

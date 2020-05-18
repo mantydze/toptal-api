@@ -24,10 +24,17 @@ def get_runs():
     qs.parse()
 
     qb = QueryBuilder(qs, Run)
-    qb.build_query()
+    qb.build_query(apply_pagination=False)
+
+    # Both USER and MANAGER can READ only self owned Run entries
+    # Only ADMIN can READ Runs of others
+    if current_user.role != Role.ADMIN:
+        qb.q = qb.q.filter(Run.user_id == current_user.user_id)
+
+    qb._apply_pagination()
 
     models = qb.q.all()
-    runs = [model.to_dict() for model in models]    # Serialize JSON
+    runs = [model.to_dict() for model in models]   # Serialize Models into JSON
 
     return jsonify(data=runs, links=qb.links)
 
@@ -37,7 +44,14 @@ def get_runs():
 def get_run(run_id=None):
     """ Return Run by ID """
 
-    return jsonify(data=Run.get_or_404(run_id).to_dict())
+    run = Run.get_or_404(run_id)
+
+    # Both USER and MANAGER can DELETE only self owned Run entries
+    # Only ADMIN can DELETE Runs of others
+    if run.user_id != current_user.user_id and current_user.role != Role.ADMIN:
+        raise Forbidden()
+
+    return jsonify(data=run.to_dict())
 
 
 @runs_route.route("/runs", methods=["POST"])
@@ -53,9 +67,9 @@ def create():
 
     user_id = input_json["user_id"]
 
-    # Both USER and MANAGER can create only self owned Run entries
-    # Only ADMIN can create Runs for others
-    if (user_id != current_user.user_id) and (current_user.role != Role.ADMIN):
+    # Both USER and MANAGER can CREATE only self owned Run entries
+    # Only ADMIN can CREATE Runs for others
+    if user_id != current_user.user_id and current_user.role != Role.ADMIN:
         raise Forbidden()
 
     # Check if User with given user_id exists at all
@@ -83,8 +97,7 @@ def update(run_id):
 
     # Both USER and MANAGER can UPDATE only self owned Run entries
     # Only ADMIN can UPDATE Runs of others
-    if (run.user_id != current_user.user_id) and \
-            (current_user.role != Role.ADMIN):
+    if run.user_id != current_user.user_id and current_user.role != Role.ADMIN:
         raise Forbidden()
 
     run.update(input_json)
@@ -102,8 +115,7 @@ def delete(run_id):
 
     # Both USER and MANAGER can DELETE only self owned Run entries
     # Only ADMIN can DELETE Runs of others
-    if (run.user_id != current_user.user_id) and \
-            (current_user.role != Role.ADMIN):
+    if run.user_id != current_user.user_id and current_user.role != Role.ADMIN:
         raise Forbidden()
 
     run.delete()

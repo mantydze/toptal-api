@@ -82,6 +82,39 @@ class User(db.Model, BaseMixin):
             db.session.rollback()
             raise
 
+    def update(self, input_json, save_commit=True):
+        """ Create new Run. Fetch weather
+
+            Parameters
+            ----------
+            input_json(dict): dictionary containing attributes to update
+            save_commit(bool): should model be saved or not
+        """
+
+        try:
+            if "username" in input_json:
+                self.username = input_json["username"]
+
+            if "password" in input_json:
+                self.password = User.encrypt_str(input_json["password"])
+
+            if save_commit:
+                db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+            raise
+
+    def delete(self):
+        """ Delete current User """
+
+        try:
+            db.session.delete(self)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
     # Login Manager
 
     def is_active(self):
