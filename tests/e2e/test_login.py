@@ -24,7 +24,7 @@ class TestLogin(unittest.TestCase):
         result = self.client.post("/register", json=data)
 
         result = self.client.post("/login", json=data)
-        assert result.status_code == 204
+        assert result.status_code == 200
 
     def test_02_login_invalid_input(self):
         """ login with no credentials """

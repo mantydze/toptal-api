@@ -69,10 +69,10 @@ class QSParser():
             leftside, value = pair.split("=")
 
             # Split leftside into parameter and keys
-            # for example filter[name][EQ]
+            # for example page[size]
             elements = leftside.split('[')
             parameter = elements[0]
-            # Array of keys
+            # Array of keys. Supports multiple keys if needed in future
             keys = [key[:-1] for key in elements[1:]]
 
             return QSPair(parameter, keys, value, pair)

@@ -2,7 +2,7 @@
 
 import math
 from sqlalchemy import asc, desc, and_, or_
-from werkzeug.exceptions import InternalServerError, BadRequest
+from werkzeug.exceptions import BadRequest, NotImplemented as NotImplemented501
 
 
 class QueryBuilder:
@@ -91,7 +91,7 @@ class QueryBuilder:
         total_matches = self.q.order_by(None).count()
 
         if not hasattr(self.cls, "base_url"):
-            raise InternalServerError("""There is a problem with class '{}'.
+            raise NotImplemented501("""There is a problem with class '{}'.
                 Link assembly is Not Implemented. Consider excluding links
                 ?exclude=links
                 """.format(self.cls.__name__))

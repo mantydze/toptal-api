@@ -8,6 +8,7 @@ from app import db
 from app.utils.base_mixin import BaseMixin
 from app.utils.roles import Role
 
+
 class User(db.Model, BaseMixin):
 
     __tablename__ = "USER"
@@ -55,16 +56,17 @@ class User(db.Model, BaseMixin):
             Parameters
             ----------
             input_json(dict): dictionary containing username and password
+            save_commit(bool): should model be saved or not
 
             Returns
             -------
             user (SAModel): newly created instance of User
         """
 
-        try:
-            # Default Role is user
-            input_json["role"] = Role.USER
+        # Default Role is user
+        input_json["role"] = Role.USER
 
+        try:
             user = User(**input_json)
 
             # Do not store passwords in plaintext, encode with sha256

@@ -9,7 +9,7 @@ from flask import jsonify, request, redirect, url_for
 from flask.blueprints import Blueprint
 from flask_login import login_required, current_user
 from sqlalchemy import or_
-from werkzeug.exceptions import BadRequest, Unauthorized
+from werkzeug.exceptions import BadRequest, Unauthorized, Forbidden
 
 
 users_route = Blueprint("users_route", __name__)
@@ -55,14 +55,14 @@ def get_user(user_id):
 
     # Simple user can only see own profile
     if current_user.role == Role.USER and current_user.user_id != user_id:
-        raise Unauthorized()
+        raise Forbidden()
 
     user = User.get_or_404(user_id)
 
     # Manager can only see own profile and other simple users
     if current_user.role == Role.MANAGER and current_user.user_id != user_id:
         if user.role != Role.USER:
-            raise Unauthorized()
+            raise Forbidden()
 
     return jsonify(data=User.get_or_404(user_id).to_dict())
 
@@ -73,10 +73,8 @@ def update_user(user_id):
 
     user = User.get_or_404(user_id)
 
+    # Get input JSON or raise BadRequest
     input_data = request.get_json(force=True)
-
-    if not isinstance(input_data, dict):
-        raise BadRequest("Request data must be a valid JSON")
 
     # Validate against schema
 

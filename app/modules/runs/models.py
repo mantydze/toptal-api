@@ -1,22 +1,26 @@
+from datetime import datetime
 from flask import url_for
 from sqlalchemy.ext.hybrid import hybrid_property
 from app import db
 from app.utils.base_mixin import BaseMixin
-
+from app.utils.json_column import JsonColumn
+from app.utils.weather_api import get_weather
 
 class Run(db.Model, BaseMixin):
 
     __tablename__ = "RUN"
 
     # List of attributes to serialize to JSON
-    attrs = ["run_id", "create_time", "distance", "latitude", "longitude",
-             "user_id", "links"]
+    public = ["run_id", "date", "distance", "duration", "latitude", "longitude",
+              "weather", "user_id"]#, "links"]
 
     run_id = db.Column(db.Integer, nullable=False, primary_key=True)
-    create_time = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    duration = db.Column(db.Integer, nullable=False)
     distance = db.Column(db.Integer, nullable=False)
-    latitude = db.Column(db.String, nullable=False)
-    longitude = db.Column(db.String, nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    weather = db.Column(JsonColumn)
     user_id = db.Column(db.Integer, db.ForeignKey("USER.user_id"),
                         nullable=False)
 
@@ -37,3 +41,37 @@ class Run(db.Model, BaseMixin):
     def base_url(self):
         """ URL to a route which returns list of objects """
         return url_for("runs_route.get_runs", _external=True)
+
+    @staticmethod
+    def create(input_json, save_commit=True):
+        """ Create new Run. Fetch weather
+
+            Parameters
+            ----------
+            input_json(dict): dictionary containing username and password
+            save_commit(bool): should model be saved or not
+
+            Returns
+            -------
+            user (SAModel): newly created instance of Run
+        """
+
+        input_json["weather"] = None
+
+        try:
+            input_json["date"] = datetime.strptime(input_json["date"], "%Y-%m-%d")
+
+            # Get weather condition from Weather API. Returns JSON or None
+            input_json["weather"] = get_weather(input_json["latitude"],
+                                                input_json["longitude"])
+
+            run = Run(**input_json)
+
+            if save_commit:
+                db.session.add(run)
+                db.session.commit()
+
+            return run
+        except:
+            db.session.rollback()
+            raise

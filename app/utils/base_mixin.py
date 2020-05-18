@@ -1,11 +1,7 @@
-""" lib/base_mixin.py
+""" utils/base_mixin.py
 """
 
-# from flask import request
 import datetime
-# from app.lib.query_string import QueryString
-# from app.lib.query_builder import QueryBuilder
-# from app.lib.jsonapi import jsonapify_obj, jsonapify_set
 from werkzeug.exceptions import NotFound
 
 
@@ -26,9 +22,9 @@ class BaseMixin(object):
 
                 value = getattr(self, attr)
 
-                if isinstance(value, datetime.datetime):
+                if isinstance(value, datetime.date):
                     # Convert Timestamp into ISO format for better readability
-                    value = value.replace(microsecond=0).isoformat(" ")
+                    value = value.isoformat()
 
                 result[attr] = value
 

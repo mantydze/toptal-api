@@ -4,9 +4,14 @@
 from flask import jsonify, request
 from flask.blueprints import Blueprint
 from flask_login import login_required, current_user
+from app.modules.users.models import User
 from app.modules.runs.models import Run
+from app.modules.runs.schema import schema_create_run
+from app.utils.jsonschema_validator import validate
 from app.utils.query_string import QueryString
 from app.utils.query_builder import QueryBuilder
+from app.utils.roles import Role
+from werkzeug.exceptions import Unauthorized, Forbidden
 
 runs_route = Blueprint("runs_route", __name__)
 
@@ -34,3 +39,30 @@ def get_run(run_id=None):
     """ Return Run by ID """
 
     return jsonify(data=Run.get_or_404(run_id).to_dict())
+
+
+@runs_route.route("/runs", methods=["POST"])
+@login_required
+def create():
+    """ Create new Run """
+
+    # Get input JSON or raise BadRequest
+    input_json = request.get_json(force=True)
+
+    # Validate input JSON or raise ValidationError
+    validate(input_json, schema_create_run)
+
+    user_id = input_json["user_id"]
+
+    # Both USER and MANAGER can create only self owned Run entries
+    # Only ADMIN can create Runs for others
+    if (user_id != current_user.user_id) and (current_user.role != Role.ADMIN):
+        raise Forbidden()
+
+    # Check if User with given user_id exists at all
+    User.get_or_404(user_id)
+
+    input_json["weather"] = None
+    run = Run.create(input_json)
+
+    return jsonify(data=run.to_dict())

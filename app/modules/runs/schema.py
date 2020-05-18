@@ -1,9 +1,14 @@
-schema_register_user = {
+schema_create_run = {
     "type": "object",
     "properties": {
-        "username": {"type": "string", "minLength": 4},
-        "password": {"type": "string", "minLength": 8}
+        "user_id": {"type": "number"},
+        "date": {"type": "string", "format": "date"},
+        "duration": {"type": "number"},
+        "distance": {"type": "number"},
+        "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+        "longitude": {"type": "number", "minimum": -180, "maximum": 180}
     },
-    "required": ["username", "password"],
+    "required": ["user_id", "date", "duration", "distance",
+                 "latitude", "longitude"],
     "additionalProperties": False
 }

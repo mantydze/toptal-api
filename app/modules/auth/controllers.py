@@ -66,7 +66,7 @@ def login():
         # Do not tell user what was wrong exactly to prevent password guessing
         raise BadRequest("Invalid login credentials")
 
-    return "", 204
+    return jsonify(data=user.to_dict())
 
 
 @auth_route.route("/logout")

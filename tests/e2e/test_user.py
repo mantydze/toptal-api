@@ -41,7 +41,7 @@ class TestUser(unittest.TestCase):
 
         assert result.status_code == 302
 
-    def test_01_simple_user_follow_redirect(self):
+    def test_02_simple_user_follow_redirect(self):
         """ login as simple user and access enpoind /users """
 
         self.client.get("/logout")
