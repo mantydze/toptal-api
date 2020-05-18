@@ -6,13 +6,14 @@ from app.utils.base_mixin import BaseMixin
 from app.utils.json_column import JsonColumn
 from app.utils.weather_api import get_weather
 
+
 class Run(db.Model, BaseMixin):
 
     __tablename__ = "RUN"
 
     # List of attributes to serialize to JSON
     public = ["run_id", "date", "distance", "duration", "latitude", "longitude",
-              "weather", "user_id"]#, "links"]
+              "weather", "user_id"]  # , "links"]
 
     run_id = db.Column(db.Integer, nullable=False, primary_key=True)
     date = db.Column(db.Date, nullable=False)
@@ -59,7 +60,8 @@ class Run(db.Model, BaseMixin):
         input_json["weather"] = None
 
         try:
-            input_json["date"] = datetime.strptime(input_json["date"], "%Y-%m-%d")
+            input_json["date"] = datetime.strptime(
+                input_json["date"], "%Y-%m-%d")
 
             # Get weather condition from Weather API. Returns JSON or None
             input_json["weather"] = get_weather(input_json["latitude"],
@@ -72,6 +74,58 @@ class Run(db.Model, BaseMixin):
                 db.session.commit()
 
             return run
-        except:
+        except Exception:
+            db.session.rollback()
+            raise
+
+    def update(self, input_json, save_commit=True):
+        """ Create new Run. Fetch weather
+
+            Parameters
+            ----------
+            input_json(dict): dictionary containing username and password
+            save_commit(bool): should model be saved or not
+
+            Returns
+            -------
+            user (SAModel): newly created instance of Run
+        """
+
+        try:
+            if "date" in input_json:
+                self.date = datetime.strptime(input_json["date"], "%Y-%m-%d")
+
+            if "distance" in input_json:
+                self.distance = input_json["distance"]
+
+            if "duration" in input_json:
+                self.duration = input_json["duration"]
+
+            coords_changed = False
+            if "latitude" in input_json:
+                self.latitude = input_json["latitude"]
+                coords_changed = True
+
+            if "longitude" in input_json:
+                self.longitude = input_json["longitude"]
+                coords_changed = True
+
+            if coords_changed or self.weather is None:
+                self.weather = get_weather(self.latitude, self.longitude)
+
+            if save_commit:
+                db.session.commit()
+
+        except Exception:
+            db.session.rollback()
+            raise
+
+    def delete(self):
+        """ Self delete """
+
+        try:
+            db.session.delete(self)
+            db.session.commit()
+        except Exception:
             db.session.rollback()
             raise

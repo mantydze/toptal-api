@@ -1,17 +1,16 @@
-""" users/controllers.py
-"""
+""" users/controllers.py """
 
 from flask import jsonify, request
 from flask.blueprints import Blueprint
 from flask_login import login_required, current_user
 from app.modules.users.models import User
 from app.modules.runs.models import Run
-from app.modules.runs.schema import schema_create_run
+from app.modules.runs.schema import schema_create_run, schema_update_run
 from app.utils.jsonschema_validator import validate
 from app.utils.query_string import QueryString
 from app.utils.query_builder import QueryBuilder
 from app.utils.roles import Role
-from werkzeug.exceptions import Unauthorized, Forbidden
+from werkzeug.exceptions import Forbidden
 
 runs_route = Blueprint("runs_route", __name__)
 
@@ -66,3 +65,47 @@ def create():
     run = Run.create(input_json)
 
     return jsonify(data=run.to_dict())
+
+
+@runs_route.route("/runs/<int:run_id>", methods=["PUT"])
+@login_required
+def update(run_id):
+    """ Update existing Run """
+
+    # Get input JSON or raise BadRequest
+    input_json = request.get_json(force=True)
+
+    # Validate input JSON or raise ValidationError
+    validate(input_json, schema_update_run)
+
+    # Check if Run with given run_id exists at all
+    run = Run.get_or_404(run_id)
+
+    # Both USER and MANAGER can UPDATE only self owned Run entries
+    # Only ADMIN can UPDATE Runs of others
+    if (run.user_id != current_user.user_id) and \
+            (current_user.role != Role.ADMIN):
+        raise Forbidden()
+
+    run.update(input_json)
+
+    return jsonify(data=run.to_dict())
+
+
+@runs_route.route("/runs/<int:run_id>", methods=["DELETE"])
+@login_required
+def delete(run_id):
+    """ Delete existing Run """
+
+    # Check if Run with given run_id exists at all
+    run = Run.get_or_404(run_id)
+
+    # Both USER and MANAGER can DELETE only self owned Run entries
+    # Only ADMIN can DELETE Runs of others
+    if (run.user_id != current_user.user_id) and \
+            (current_user.role != Role.ADMIN):
+        raise Forbidden()
+
+    run.delete()
+
+    return "", 204

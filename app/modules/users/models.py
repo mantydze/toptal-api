@@ -77,7 +77,8 @@ class User(db.Model, BaseMixin):
                 db.session.commit()
 
             return user
-        except:
+
+        except Exception:
             db.session.rollback()
             raise
 

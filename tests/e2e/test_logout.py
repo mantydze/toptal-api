@@ -25,7 +25,7 @@ class TestLogout(unittest.TestCase):
     def test_02_login_logout(self):
         """ login with valid username and password """
 
-        data = {'username': 'user', 'password': 'password'}
+        data = {"username": "user", "password": "password"}
 
         # Create valid user first
         self.client.post("/register", json=data)

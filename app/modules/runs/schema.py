@@ -12,3 +12,15 @@ schema_create_run = {
                  "latitude", "longitude"],
     "additionalProperties": False
 }
+
+schema_update_run = {
+    "type": "object",
+    "properties": {
+        "date": {"type": "string", "format": "date"},
+        "duration": {"type": "number"},
+        "distance": {"type": "number"},
+        "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+        "longitude": {"type": "number", "minimum": -180, "maximum": 180}
+    },
+    "additionalProperties": False
+}

@@ -18,37 +18,37 @@ class TestRegister(unittest.TestCase):
     def test_01_register_valid(self):
         """ Register with valid username and password """
 
-        data = {'username': 'user', 'password': 'password'}
+        data = {"username": "user", "password": "password"}
         result = self.client.post("/register", json=data)
         assert result.status_code == 200
 
     def test_02_register_duplicate(self):
         """ Register with duplicate username """
-        data = {'username': 'user', 'password': 'password'}
+        data = {"username": "user", "password": "password"}
         result = self.client.post("/register", json=data)
         assert result.status_code == 400
 
     def test_03_register_empty_username(self):
         """ Register with empty username """
-        data = {'username': '', 'password': 'password'}
+        data = {"username": "", "password": "password"}
         result = self.client.post("/register", json=data)
         assert result.status_code == 400
 
     def test_04_register_empty_password(self):
         """ Register with empty password """
-        data = {'username': 'username', 'password': ''}
+        data = {"username": "username", "password": ""}
         result = self.client.post("/register", json=data)
         assert result.status_code == 400
 
     def test_05_register_long_username(self):
         """ Register with too long username """
-        data = {'username': '123456789012345678901234', 'password': 'password'}
+        data = {"username": "123456789012345678901234", "password": "password"}
         result = self.client.post("/register", json=data)
         assert result.status_code == 400
 
     def test_06_register_long_password(self):
         """ Register with too long password """
-        data = {'username': 'username', 'password': '123456789012345678901234'}
+        data = {"username": "username", "password": "123456789012345678901234"}
         result = self.client.post("/register", json=data)
         assert result.status_code == 400
 

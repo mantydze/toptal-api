@@ -28,24 +28,24 @@ class TestRun(unittest.TestCase):
                 # Default role is USER, set MANAGER and ADMIN roles
                 db.engine.execute("""
                     UPDATE USER
-                    SET ROLE='{0}'
+                    SET ROLE="{0}"
                     WHERE USERNAME LIKE '%{0}%'""".format(role))
 
     def login_user(self):
         self.client.get("/logout")
-        user_data = {'username': 'user1', 'password': 'password1'}
+        user_data = {"username": "user1", "password": "password1"}
         user = self.client.post("/login", json=user_data)
         return user.get_json()
 
     def login_manager(self):
         self.client.get("/logout")
-        user_data = {'username': 'manager1', 'password': 'password1'}
+        user_data = {"username": "manager1", "password": "password1"}
         user = self.client.post("/login", json=user_data)
         return user.get_json()
 
     def login_admin(self):
         self.client.get("/logout")
-        user_data = {'username': 'admin1', 'password': 'password1'}
+        user_data = {"username": "admin1", "password": "password1"}
         user = self.client.post("/login", json=user_data)
         return user.get_json()
 
@@ -164,5 +164,5 @@ class TestRun(unittest.TestCase):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -26,7 +26,7 @@ class TestUser(unittest.TestCase):
                 # Default role is USER, set MANAGER and ADMIN roles
                 db.engine.execute("""
                     UPDATE USER
-                    SET ROLE='{0}'
+                    SET ROLE="{0}"
                     WHERE USERNAME LIKE '%{0}%'""".format(role))
 
     def test_01_simple_user(self):
@@ -34,7 +34,7 @@ class TestUser(unittest.TestCase):
 
         self.client.get("/logout")
 
-        data = {'username': 'user1', 'password': 'password1'}
+        data = {"username": "user1", "password": "password1"}
         self.client.post("/login", json=data)
 
         result = self.client.get("/users")
@@ -46,7 +46,7 @@ class TestUser(unittest.TestCase):
 
         self.client.get("/logout")
 
-        data = {'username': 'user1', 'password': 'password1'}
+        data = {"username": "user1", "password": "password1"}
         self.client.post("/login", json=data)
 
         result = self.client.get("/users", follow_redirects=True)

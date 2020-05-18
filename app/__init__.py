@@ -6,7 +6,7 @@ import traceback
 import sqlalchemy
 import flask_login
 
-from flask import g, Flask, request, jsonify
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.exceptions import InternalServerError, HTTPException
@@ -15,7 +15,6 @@ from app.utils.config_loader import load_config
 db = SQLAlchemy()
 toolbar = DebugToolbarExtension()
 login_manager = flask_login.LoginManager()
-
 
 
 def handle_error(error):
