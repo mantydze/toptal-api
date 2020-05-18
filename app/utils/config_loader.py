@@ -1,3 +1,5 @@
+""" utils/config_loader.py """
+
 import sys
 import json
 import argparse
@@ -20,7 +22,6 @@ def load_config():
                         default=None, help="Path to configuration JSON file")
     args = parser.parse_args()
 
-    # Value of argument
     config_path = args.config_path
 
     try:

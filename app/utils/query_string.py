@@ -134,11 +134,11 @@ class QueryString:
     def _add_page(self, pair):
         """ Convert data of QSPair into querystring pagination
 
-        Parameters
-        ----------
-        pair(QSPair) : data from URL
+            Parameters
+            ----------
+            pair(QSPair) : data from URL
 
-        Raises BadRequest if pagination parameters are invalid
+            Raises BadRequest if pagination parameters are invalid
         """
 
         if len(pair.keys) == 0:
@@ -168,11 +168,11 @@ class QueryString:
     def _add_sort(self, pair):
         """" Convert data of QSPair into querystring sort
 
-        Parameters
-        ----------
-        pair(QSPair) : data from URL
+            Parameters
+            ----------
+            pair(QSPair) : data from URL
 
-        Raises BadRequest if trying to sort by unknown field
+            Raises BadRequest if trying to sort by unknown field
         """
 
         fields = pair.value.split(',')
@@ -205,11 +205,11 @@ class QueryString:
     def _add_filter(self, pair):
         """ Convert data of QSPair into filter expression
 
-        Parameters
-        ----------
-        pair(QSPair) : data from URL
+            Parameters
+            ----------
+            pair(QSPair) : data from URL
 
-        Raises BadRequest if cannot parse given query
+            Raises BadRequest if cannot parse given query
         """
 
         operator = pp.oneOf("eq ne lt le gt ge").setName("operator")

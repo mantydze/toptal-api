@@ -5,5 +5,7 @@
 
     "SQLALCHEMY_DATABASE_URI" : "sqlite://///home/mantydze/toptal/toptal-api/test.sqlite",
     "SQLALCHEMY_TRACK_MODIFICATIONS": false,
-    "SECRET_KEY": "<replace with a secret key>"
+    "SECRET_KEY": "<replace with a secret key>",
+
+    "WEATHER_API_KEY": "f3f35c105957cbc06255077f3839668c"
 }

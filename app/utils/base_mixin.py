@@ -1,5 +1,4 @@
-""" utils/base_mixin.py
-"""
+""" utils/base_mixin.py """
 
 import datetime
 from werkzeug.exceptions import NotFound
@@ -10,6 +9,10 @@ class BaseMixin(object):
 
     def to_dict(self):
         """ Convert SA Model into a dictionary. Does not serialize relationships
+
+            Returns
+            -------
+            result (dict) - SA Model serialized into JSON
         """
 
         # List public attributes to export. Use all available if not specified
@@ -33,47 +36,35 @@ class BaseMixin(object):
     @classmethod
     def get(cls, primary_key):
         """ Return an instance based on the given primary key identifier
-            or None if not found.
-        """
+
+            Parameters
+            ----------
+            primary_key - primary key of an instance
+
+            Returns
+            -------
+            obj (SAModel)
+
+            Retursn None if instance is not found  """
+
         return cls.query.get(primary_key)
 
     @classmethod
     def get_or_404(cls, primary_key):
         """ Return an instance based on the given primary key identifier
-            or raises 404 if not found.
-        """
-
-        obj = cls.get(primary_key)
-        if obj is None:
-            error_msg = "{} not found".format(cls.__name__)
-
-            raise NotFound(error_msg)
-
-        return obj
-
-    @classmethod
-    def get_all(cls):
-        """ Return all instances of a given class
 
             Parameters
             ----------
-            cls (sqlachemy.Model)
+            primary_key - primary key of an instance
 
             Returns
             -------
-            data (dict): Result set exported into a valid JSON
-            fiedsl (list): projection, list of fields to export
-        """
+            obj (SAModel)
 
-        # Parse request query string (URL)
-        # qs = QueryString(request.query_string.decode("utf-8"), cls.fields)
-        # qs.parse()
+            Raises NotFound(404) if instance is not found  """
 
-        # Build SA query and apply parsed QueryString
-        # qb = QueryBuilder(qs, cls)
-        # qb.build_query()
+        obj = cls.get(primary_key)
+        if obj is None:
+            raise NotFound("{} not found".format(cls.__name__))
 
-        # Build Response object (JSON) using QueryBuilder (resultset is list)
-        # return jsonapify_set(qb)
-
-        return [obj.to_dict() for obj in cls.query.all()]
+        return obj

@@ -8,13 +8,13 @@ from werkzeug.exceptions import BadRequest, NotImplemented as NotImplemented501
 class QueryBuilder:
 
     OPERATOR_FUNCTIONS = {
-            "eq": lambda x, y: x == y,
-            "ne": lambda x, y: x != y,
-            "lt": lambda x, y: x < y,
-            "le": lambda x, y: x <= y,
-            "gt": lambda x, y: x > y,
-            "ge": lambda x, y: x >= y
-        }
+        "eq": lambda x, y: x == y,
+        "ne": lambda x, y: x != y,
+        "lt": lambda x, y: x < y,
+        "le": lambda x, y: x <= y,
+        "gt": lambda x, y: x > y,
+        "ge": lambda x, y: x >= y
+    }
 
     def __init__(self, qs, cls):
         """ Parameters
@@ -117,11 +117,13 @@ class QueryBuilder:
         base = base_url + base_qs
         if self.qs.page["number"] > 1:
             self.links["first"] = base + "&page[number]=1"
-            self.links["prev"] = base + "&page[number]={}".format((self.qs.page["number"] - 1))
+            self.links["prev"] = base + "&page[number]={}".format(
+                (self.qs.page["number"] - 1))
 
         if self.qs.page["number"] < last_page:
             self.links["last"] = base + "&page[number]={}".format(last_page)
-            self.links["next"] = base + "&page[number]={}".format((self.qs.page["number"] + 1))
+            self.links["next"] = base + "&page[number]={}".format(
+                (self.qs.page["number"] + 1))
 
         # Apply Pagination
         offset = (self.qs.page["number"] - 1) * self.qs.page["size"]

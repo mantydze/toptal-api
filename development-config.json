@@ -16,5 +16,7 @@
     "SECRET_KEY": "<replace with a secret key>",
 
     "DEBUG_TB_PROFILER_ENABLED": true,
-    "DEBUG_TB_INTERCEPT_REDIRECTS": false
+    "DEBUG_TB_INTERCEPT_REDIRECTS": false,
+
+    "WEATHER_API_KEY": "f3f35c105957cbc06255077f3839668c"
 }
