@@ -105,7 +105,6 @@ class QueryString:
         self.parser.parse(self.qs)
 
         for pair in self.parser.pairs:
-            print(pair)
             if pair.parameter not in QueryString.PARAMETERS:
                 raise BadRequest("""Unsupported parameter '{}'
                                  """.format(pair.kv_str))
