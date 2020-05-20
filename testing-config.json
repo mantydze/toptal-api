@@ -7,5 +7,6 @@
     "SQLALCHEMY_TRACK_MODIFICATIONS": false,
     "SECRET_KEY": "<replace with a secret key>",
 
-    "WEATHER_API_KEY": "f3f35c105957cbc06255077f3839668c"
+    "WEATHER_API_KEY": "3cb5d1b68de3a0f0e83ca4c3fb372593",
+    "comment": "WEATHER_API_KEY key will exprire on 2020-06-01"
 }

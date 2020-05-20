@@ -18,5 +18,8 @@
     "DEBUG_TB_PROFILER_ENABLED": true,
     "DEBUG_TB_INTERCEPT_REDIRECTS": false,
 
-    "WEATHER_API_KEY": "f3f35c105957cbc06255077f3839668c"
+    "JSON_SORT_KEYS": false,
+
+    "WEATHER_API_KEY": "d06e4d5316a5850f3968aff2d8a21f82",
+    "comment": "WEATHER_API_KEY key will exprire on 2020-06-01"
 }

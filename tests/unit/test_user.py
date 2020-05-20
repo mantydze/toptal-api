@@ -11,14 +11,30 @@ class TestUser(unittest.TestCase):
     def setUpClass(cls):
         cls.app = create_app()
 
-        cls.input_json = {"username": "username123", "password": "password123"}
-        cls.user = User.create(cls.input_json, save=False, commit=False)
+    def test_01_new_user_role_password(self):
+        """ Create new user. Check if default role is set and password hashed
+        """
 
-    def test_01_check_role(self):
-        assert self.user.role == Role.USER
+        create_json = {"username": "username123", "password": "password123"}
+        user = User.create(create_json, save=False, commit=False)
 
-    def test_02_check_password(self):
-        assert self.user.password != self.input_json["password"]
+        assert user.role == Role.USER
+        assert user.password != create_json["password"]
+
+    def test_02_update_user(self):
+        """ Update user. Check if username and password are changed """
+
+        create_json = {"username": "username123", "password": "password123"}
+        user = User.create(create_json, save=False, commit=False)
+        prev_password = user.password
+
+        update_json = {"username": "username321", "password": "password321"}
+
+        user.update(update_json, commit=False)
+
+        assert user.username == update_json["username"]
+        assert user.password != update_json["password"]
+        assert user.password != prev_password
 
     @classmethod
     def tearDownClass(cls):

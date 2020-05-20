@@ -1,17 +1,18 @@
 """ users/controllers.py """
 
+from app import db
+from app.modules.runs.models import Run
 from app.modules.users.models import User
+from app.modules.users.schema import schema_create_user, schema_update_user
+from app.utils.roles import Role
 from app.utils.query_string import QueryString
 from app.utils.query_builder import QueryBuilder
-from app.utils.roles import Role
-from app.modules.users.schema import schema_create_user, schema_update_user
 from app.utils.jsonschema_validator import validate
 from flask import jsonify, request, redirect, url_for
 from flask.blueprints import Blueprint
 from flask_login import login_required, current_user
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from werkzeug.exceptions import BadRequest, Forbidden
-
 
 users_route = Blueprint("users_route", __name__)
 
@@ -24,7 +25,7 @@ def get_users():
         MANAGER sees own profile and other Users
         ADMIN sees all Users """
 
-    # Simple user is redirected to see own profile
+    # Simple user is redirected to see own profile, redirects to own profile
     if current_user.role == Role.USER:
         return redirect(url_for("users_route.get_user",
                                 user_id=current_user.user_id))
@@ -145,3 +146,50 @@ def delete(user_id):
     user.delete()
 
     return "", 204
+
+
+@users_route.route("/users/<int:user_id>/report")
+@login_required
+def get_user_reports(user_id):
+    """ Return User by ID """
+
+    # USER can only READ own profile
+    if current_user.role == Role.USER and current_user.user_id != user_id:
+        raise Forbidden()
+
+    user = User.get_or_404(user_id)
+
+    # MANAGER can only READ own profile and other simple USERs
+    if current_user.role == Role.MANAGER and current_user.user_id != user_id:
+        if user.role != Role.USER:
+            raise Forbidden()
+
+    year = func.extract('year', Run.date)
+
+    q = db.session.query(
+        func.sum(Run.distance).label("total_distance"),
+        func.sum(Run.distance).label("total_duration"),
+        func.min(Run.date).label("date_from"),
+        func.max(Run.date).label("date_to"),
+        func.count().label("nruns"),
+        Run.isoweek.label("isoweek"),
+        year.label("year")
+    ).filter_by(user_id=user_id).group_by(year, Run.isoweek)
+
+    report = {}
+
+    for row in q.all():
+        key = "{}_{}".format(row.year, row.isoweek)
+        report[key] = {
+            "nruns": row.nruns,
+            "distance": row.total_distance,
+            "duration": row.total_duration,
+            "avg_speed": round(row.total_distance / row.total_duration, 2),
+            "avg_distance": round(row.total_distance / row.nruns, 2),
+            "week_start": row.date_from.isoformat(),
+            "week_end": row.date_to.isoformat(),
+            "isoweek": row.isoweek,
+            "year": row.year
+        }
+
+    return jsonify(report)

@@ -1,12 +1,12 @@
-
-import hashlib
-
-from flask import url_for
-from sqlalchemy.ext.hybrid import hybrid_property
-
+""" usrs/models.py """
 from app import db
 from app.utils.base_mixin import BaseMixin
 from app.utils.roles import Role
+from app.modules.runs.models import Run
+from flask import url_for
+import hashlib
+from sqlalchemy import func
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class User(db.Model, BaseMixin):
@@ -24,6 +24,24 @@ class User(db.Model, BaseMixin):
     authenticated = db.Column(db.Boolean, default=False)
 
     runs = db.relationship("Run", backref="user", lazy="dynamic")
+
+    @hybrid_property
+    def reports(self):
+        year = func.extract('year', Run.date)
+        week = func.extract('week', Run.date)
+        # return select([
+        #     func.sum(Run.distance).label("sum_distance"),
+        #     func.sum(Run.distance).label("sum_duration"),
+        #     year.label("year"),
+        #     week.label("week")]
+        # ).where(Run.user_id == self.user_id).group_by(year, week)
+
+        return db.session.query(
+            func.sum(Run.distance).label("sum_distance"),
+            func.sum(Run.distance).label("sum_duration"),
+            year.label("year"),
+            week.label("week")
+        ).filter_by(user_id=self.user_id).group_by(year, week)
 
     @hybrid_property
     def links(self):

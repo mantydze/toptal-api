@@ -1,10 +1,10 @@
 """ init.py
 """
 
-import time
 import traceback
 import sqlalchemy
 import flask_login
+from flask_login import current_user
 
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -71,7 +71,7 @@ def create_app():
     @app.route("/")
     def index():
         """ Index page """
-        return jsonify({"hello": "world"})
+        return jsonify(current_user.to_dict())
 
     @app.errorhandler(sqlalchemy.exc.OperationalError)
     def handle_validation_error(e):
