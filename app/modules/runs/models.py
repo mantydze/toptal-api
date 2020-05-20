@@ -13,7 +13,7 @@ class Run(db.Model, BaseMixin):
 
     # List of attributes to serialize to JSON
     public = ["run_id", "date", "distance", "duration", "latitude",
-              "longitude", "weather", "user_id"]  # , "links"]
+              "longitude", "weather", "user_id", "links"]
 
     run_id = db.Column(db.Integer, nullable=False, primary_key=True)
     date = db.Column(db.Date, nullable=False)

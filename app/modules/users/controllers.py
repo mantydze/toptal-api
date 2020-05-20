@@ -122,6 +122,10 @@ def update_user(user_id):
         if duplicate:
             raise BadRequest("Username '{}' is already taken".format(username))
 
+    # Only admin can change roles
+    if current_user.role != Role.ADMIN:
+        input_json.pop("role", None)
+
     user.update(input_json)
 
     return jsonify(data=user.to_dict())

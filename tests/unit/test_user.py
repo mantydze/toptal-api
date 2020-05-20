@@ -17,7 +17,6 @@ class TestUser(unittest.TestCase):
 
         create_json = {"username": "username123", "password": "password123"}
         user = User.create(create_json, save=False, commit=False)
-
         assert user.role == Role.USER
         assert user.password != create_json["password"]
 

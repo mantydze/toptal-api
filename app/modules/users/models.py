@@ -5,7 +5,6 @@ from app.utils.roles import Role
 from app.modules.runs.models import Run
 from flask import url_for
 import hashlib
-from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property
 
 
@@ -24,24 +23,6 @@ class User(db.Model, BaseMixin):
     authenticated = db.Column(db.Boolean, default=False)
 
     runs = db.relationship("Run", backref="user", lazy="dynamic")
-
-    @hybrid_property
-    def reports(self):
-        year = func.extract('year', Run.date)
-        week = func.extract('week', Run.date)
-        # return select([
-        #     func.sum(Run.distance).label("sum_distance"),
-        #     func.sum(Run.distance).label("sum_duration"),
-        #     year.label("year"),
-        #     week.label("week")]
-        # ).where(Run.user_id == self.user_id).group_by(year, week)
-
-        return db.session.query(
-            func.sum(Run.distance).label("sum_distance"),
-            func.sum(Run.distance).label("sum_duration"),
-            year.label("year"),
-            week.label("week")
-        ).filter_by(user_id=self.user_id).group_by(year, week)
 
     @hybrid_property
     def links(self):
@@ -117,6 +98,11 @@ class User(db.Model, BaseMixin):
                 self.username = input_json["username"]
 
             if "password" in input_json:
+                self.password = User.encrypt_str(input_json["password"])
+
+            if "role" in input_json:
+                self.role = input_json["role"]
+
                 self.password = User.encrypt_str(input_json["password"])
 
             if commit:
