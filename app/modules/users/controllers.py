@@ -1,5 +1,5 @@
 """ users/controllers.py """
-
+import datetime
 from app import db
 from app.modules.runs.models import Run
 from app.modules.users.models import User
@@ -164,32 +164,51 @@ def get_user_reports(user_id):
         if user.role != Role.USER:
             raise Forbidden()
 
+    # Report: groupped runs by year and week
     year = func.extract('year', Run.date)
+    week = func.extract('week', Run.date)
 
     q = db.session.query(
         func.sum(Run.distance).label("total_distance"),
-        func.sum(Run.distance).label("total_duration"),
+        func.sum(Run.duration).label("total_duration"),
         func.min(Run.date).label("date_from"),
         func.max(Run.date).label("date_to"),
         func.count().label("nruns"),
-        Run.isoweek.label("isoweek"),
-        year.label("year")
-    ).filter_by(user_id=user_id).group_by(year, Run.isoweek)
+        year.label("year"),
+        week.label("week")
+    ).filter_by(user_id=user_id).group_by(year, week)
 
     report = {}
 
     for row in q.all():
-        key = "{}_{}".format(row.year, row.isoweek)
+
+        # Convert year and week number into datetime
+        year_week = "{}-{}-1".format(row.year, row.week)
+        monday = datetime.datetime.strptime(year_week, "%Y-%W-%w")
+        sunday = monday + datetime.timedelta(days=6)
+
+        # Link to a list of runs which were used for that week report
+        link_runs = url_for("runs_route.get_runs", _external=True)
+        link_runs += "?filter=(date ge '{}') AND (date le '{}')".format(
+            monday.strftime('%Y-%m-%d'),
+            sunday.strftime('%Y-%m-%d'))
+
+        # Year and iso week number
+        # https://www.epochconverter.com/weeks/2019
+
+        key = "{}_{}".format(row.year, row.week+1)
+
         report[key] = {
             "nruns": row.nruns,
             "distance": row.total_distance,
             "duration": row.total_duration,
             "avg_speed": round(row.total_distance / row.total_duration, 2),
             "avg_distance": round(row.total_distance / row.nruns, 2),
-            "week_start": row.date_from.isoformat(),
-            "week_end": row.date_to.isoformat(),
-            "isoweek": row.isoweek,
-            "year": row.year
+            "week_start": monday.strftime('%Y-%m-%d'),
+            "week_end": sunday.strftime('%Y-%m-%d'),
+            "isoweek": row.week+1,
+            "year": row.year,
+            "runs": link_runs
         }
 
     return jsonify(report)

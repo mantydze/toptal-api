@@ -13,11 +13,10 @@ class Run(db.Model, BaseMixin):
 
     # List of attributes to serialize to JSON
     public = ["run_id", "date", "distance", "duration", "latitude",
-              "longitude", "weather", "user_id", "isoweek"]  # , "links"]
+              "longitude", "weather", "user_id"]  # , "links"]
 
     run_id = db.Column(db.Integer, nullable=False, primary_key=True)
     date = db.Column(db.Date, nullable=False)
-    isoweek = db.Column(db.Integer, nullable=False)     # for building repors
     duration = db.Column(db.Integer, nullable=False)
     distance = db.Column(db.Integer, nullable=False)
     latitude = db.Column(db.Float, nullable=False)
@@ -65,8 +64,6 @@ class Run(db.Model, BaseMixin):
             input_json["date"] = datetime.strptime(
                 input_json["date"], "%Y-%m-%d")
 
-            input_json["isoweek"] = input_json["date"].isocalendar()[1]
-
             # Get weather condition from Weather API. Returns JSON or None
             input_json["weather"] = get_weather(input_json["latitude"],
                                                 input_json["longitude"])
@@ -96,7 +93,6 @@ class Run(db.Model, BaseMixin):
         try:
             if "date" in input_json:
                 self.date = datetime.strptime(input_json["date"], "%Y-%m-%d")
-                self.isoweek = self.date.isocalendar()[1]
 
             if "distance" in input_json:
                 self.distance = input_json["distance"]
