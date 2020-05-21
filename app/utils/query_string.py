@@ -1,4 +1,4 @@
-import urllib.parse
+from urllib.parse import unquote
 import pyparsing as pp
 from werkzeug.exceptions import BadRequest
 
@@ -91,10 +91,10 @@ class QueryString:
         'sort'
     )
 
-    def __init__(self, query_string):
-        self.qs = urllib.parse.unquote(query_string)
+    def __init__(self, query_string, valid_fields=None):
         self.parser = QSParser()
-
+        self.qs = unquote(query_string) if query_string is not None else ""
+        self.valid_fields = valid_fields if valid_fields is not None else []
         self.filter = []
         self.page = {"number": 1, "size": 20}
         self.sort = []
@@ -265,7 +265,7 @@ class QueryString:
             qs.append("sort=" + ",".join(self.sort))
 
         if self.filter:
-            qs.append("filter=({})".format(build_filter_string(self.filter)))
+            qs.append("filter={}".format(build_filter_string(self.filter)))
 
         if include_pagination:
             qs.append("page[number]=%d" % self.page["number"])

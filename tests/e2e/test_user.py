@@ -1,5 +1,6 @@
 import string
 import random
+import datetime
 import unittest
 
 from app import create_app, db
@@ -39,6 +40,19 @@ class TestUser(unittest.TestCase):
 
         return user.get_json()
 
+    def test_000_user_index(self):
+        """ Login as USER and access endpoint /users """
+
+        user = self.create_user()
+        user = user["data"]
+
+        result = self.client.get("/")
+        assert result.status_code == 200
+
+        result = result.get_json()
+
+        assert user["username"] == result["username"]
+
     def test_010_user_view_users(self):
         """ Login as USER and access endpoint /users """
 
@@ -52,6 +66,26 @@ class TestUser(unittest.TestCase):
         self.create_user()
         result = self.client.get("/users", follow_redirects=True)
         assert result.status_code == 200
+
+    def test_012_user_view_other_user(self):
+        """ Login as USER and access other user profile """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+
+        self.create_user()
+        result = self.client.get("/users/{}".format(user_id))
+        assert result.status_code == 403
+
+    def test_012_manager_view_other_manager(self):
+        """ Login as MANAGER and access other MANAGER profile """
+
+        manager = self.create_manager(login=False)
+        manager_id = manager["data"]["user_id"]
+
+        self.create_manager()
+        result = self.client.get("/users/{}".format(manager_id))
+        assert result.status_code == 403
 
     def test_020_manager_view_users(self):
         """ Login as MANAGER and access endpoint /users.
@@ -105,6 +139,18 @@ class TestUser(unittest.TestCase):
 
         assert result.status_code == 403
 
+    def test_033_user_update_duplicate(self):
+        """ Login as USER and update self with duplicate name """
+
+        user = self.create_user(login=False)
+        data = {"username": user["data"]["username"], "password": "password11"}
+
+        my_user = self.create_user()
+        my_id = my_user["data"]["user_id"]
+        result = self.client.put("/users/{}".format(my_id), json=data)
+
+        assert result.status_code == 400
+
     def test_040_manager_update_user(self):
         """ Login as MANAGER and update USER """
 
@@ -148,12 +194,16 @@ class TestUser(unittest.TestCase):
         manager = self.create_manager(login=False)
         manager_id = manager["data"]["user_id"]
         self.create_admin()
-        data = {"username": "manager55", "password": "password55"}
+        data = {"username": "manager55",
+                "password": "password55",
+                "role": Role.ADMIN}
+
         result = self.client.put("/users/{}".format(manager_id), json=data)
         updated_manager = result.get_json()["data"]
 
         assert result.status_code == 200
         assert updated_manager["username"] == data["username"]
+        assert updated_manager["role"] == data["role"]
 
     def test_052_admin_update_admin(self):
         """ Login as ADMIN and update ADMIN """
@@ -266,6 +316,47 @@ class TestUser(unittest.TestCase):
         result = self.client.delete("/users/{}".format(admin_id))
 
         assert result.status_code == 204
+
+    def test_090_user_view_report(self):
+        """ Login as USER and view self report """
+
+        user = self.create_user()
+        user_id = user["data"]["user_id"]
+
+        # Create few runs
+        run_data = {
+            "user_id": user_id,
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+        self.client.post("/runs", json=run_data)
+        self.client.post("/runs", json=run_data)
+
+        result = self.client.get("/users/{}/report".format(user_id))
+        assert result.status_code == 200
+
+    def test_091_user_view_other_user_report(self):
+        """ Login as USER and access other user report """
+
+        user = self.create_user(login=False)
+        user_id = user["data"]["user_id"]
+
+        self.create_user()
+        result = self.client.get("/users/{}/report".format(user_id))
+        assert result.status_code == 403
+
+    def test_092_manager_view_other_manager_report(self):
+        """ Login as MANAGER and access other MANAGER report """
+
+        manager = self.create_manager(login=False)
+        manager_id = manager["data"]["user_id"]
+
+        self.create_manager()
+        result = self.client.get("/users/{}/report".format(manager_id))
+        assert result.status_code == 403
 
     @classmethod
     def tearDownClass(cls):

@@ -150,6 +150,178 @@ class TestRun(unittest.TestCase):
 
         assert result.status_code == 404
 
+    def test_07_view_runs_non_admin(self):
+        """ Login as USER and VIEW runs """
+
+        user = self.create_user()
+        user_id = user["data"]["user_id"]
+
+        run_data = {
+            "user_id": user_id,
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        result = self.client.post("/runs", json=run_data)
+        assert result.status_code == 200
+
+        runs = self.client.get("/runs")
+        assert runs.status_code == 200
+
+    def test_08_create_run_view(self):
+        """ Login as USER and create own Run and view it"""
+
+        user = self.create_user()
+
+        run_data = {
+            "user_id": user["data"]["user_id"],
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        run = self.client.post("/runs", json=run_data)
+        assert run.status_code == 200
+
+        run_id = run.get_json()["data"]["run_id"]
+        result = self.client.get("/runs/{}".format(run_id))
+        assert result.status_code == 200
+
+    def test_09_create_run_view_other(self):
+        """ Login as USER and create own Run and view it with other USER"""
+
+        user = self.create_user()
+
+        run_data = {
+            "user_id": user["data"]["user_id"],
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        run = self.client.post("/runs", json=run_data)
+        assert run.status_code == 200
+
+        self.create_user()
+
+        run_id = run.get_json()["data"]["run_id"]
+        result = self.client.get("/runs/{}".format(run_id))
+        assert result.status_code == 403
+
+    def test_10_create_run_delete(self):
+        """ Login as USER and create own Run and delete it"""
+
+        user = self.create_user()
+
+        run_data = {
+            "user_id": user["data"]["user_id"],
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        run = self.client.post("/runs", json=run_data)
+        assert run.status_code == 200
+
+        run_id = run.get_json()["data"]["run_id"]
+        result = self.client.delete("/runs/{}".format(run_id))
+        assert result.status_code == 204
+
+    def test_11_create_run_delete_other(self):
+        """ Login as USER and create own Run and delete it with other user"""
+
+        user = self.create_user()
+
+        run_data = {
+            "user_id": user["data"]["user_id"],
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        run = self.client.post("/runs", json=run_data)
+        assert run.status_code == 200
+
+        self.create_user()
+
+        run_id = run.get_json()["data"]["run_id"]
+        result = self.client.delete("/runs/{}".format(run_id))
+        assert result.status_code == 403
+
+    def test_12_create_run_update(self):
+        """ Login as USER and create own Run and update it"""
+
+        user = self.create_user()
+
+        run1_data = {
+            "user_id": user["data"]["user_id"],
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        result1 = self.client.post("/runs", json=run1_data)
+        assert result1.status_code == 200
+
+        run1 = result1.get_json()["data"]
+        run_id = run1["run_id"]
+
+        run2_data = {
+            "date": "2000-03-14",
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 48.856613,
+            "longitude": 2.352222
+        }
+        result2 = self.client.put("/runs/{}".format(run_id), json=run2_data)
+        assert result2.status_code == 200
+
+        run2 = result2.get_json()["data"]
+
+        keys = list(run1_data.keys()) + ["weather"]
+        keys.remove("user_id")
+
+        for key in keys:
+            assert run1[key] != run2[key]
+
+    def test_13_create_run_update_other(self):
+        """ Login as USER and create own Run and update it with other user"""
+
+        user = self.create_user()
+
+        run_data = {
+            "user_id": user["data"]["user_id"],
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        run = self.client.post("/runs", json=run_data)
+        assert run.status_code == 200
+
+        self.create_user()
+
+        run_data.pop("user_id", None)
+
+        run_id = run.get_json()["data"]["run_id"]
+        result = self.client.put("/runs/{}".format(run_id), json=run_data)
+        assert result.status_code == 403
+
     @classmethod
     def tearDownClass(cls):
         pass

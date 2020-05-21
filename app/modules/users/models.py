@@ -2,7 +2,6 @@
 from app import db
 from app.utils.base_mixin import BaseMixin
 from app.utils.roles import Role
-from app.modules.runs.models import Run
 from flask import url_for
 import hashlib
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -102,8 +101,6 @@ class User(db.Model, BaseMixin):
 
             if "role" in input_json:
                 self.role = input_json["role"]
-
-                self.password = User.encrypt_str(input_json["password"])
 
             if commit:
                 db.session.commit()

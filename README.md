@@ -10,5 +10,5 @@ python run.py --config_path development-config.json
 
 ### Tests
 ```
-coverage run --omit 'venv/*' tests.py --config_path testing-config.json && coverage html
+coverage run tests.py --config_path testing-config.json && coverage html
 ```
