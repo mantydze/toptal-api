@@ -4,7 +4,7 @@
 import traceback
 import sqlalchemy
 import flask_login
-from flask_login import current_user
+from flask_login import current_user, login_required
 
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -67,10 +67,21 @@ def create_app():
     # Login Manager
     login_manager.init_app(app)
 
+    @app.before_first_request
+    def create_db_schema():
+        from flask import current_app
+        with current_app.app_context():
+            db.create_all()
+
     # Index page
     @app.route("/")
     def index():
         """ Index page """
+        return jsonify({})
+
+    @app.route("/whoami")
+    @login_required
+    def whoami():
         return jsonify(current_user.to_dict())
 
     @app.errorhandler(sqlalchemy.exc.OperationalError)

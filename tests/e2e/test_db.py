@@ -4,7 +4,6 @@ import unittest
 
 from app import create_app, db
 from app.utils.roles import Role
-import sqlalchemy
 
 
 class TestDB(unittest.TestCase):
@@ -32,13 +31,6 @@ class TestDB(unittest.TestCase):
             user = self.client.post("/login", json=data)
 
         return user.get_json()
-
-    def test_01_login(self):
-        """ Try login without database tables """
-
-        self.client.get("/logout")
-
-        self.assertRaises(sqlalchemy.exc.OperationalError, self.create_user)
 
     @classmethod
     def tearDownClass(cls):

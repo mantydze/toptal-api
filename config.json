@@ -3,7 +3,8 @@
     "TESTING": false,
     "PORT": 4567,
 
-    "SQLALCHEMY_DATABASE_URI" : "sqlite://///home/mantydze/toptal/toptal-api/db.sqlite",
+    "SQLALCHEMY_DATABASE_URI" : "sqlite:///../db.sqlite",
+    "RECREATE_DATABASE": false,
 
     "SQLALCHEMY_TRACK_MODIFICATIONS": false,
     "SQLALCHEMY_ENGINE_OPTIONS": {
@@ -21,5 +22,5 @@
     "JSON_SORT_KEYS": false,
 
     "WEATHER_API_KEY": "d06e4d5316a5850f3968aff2d8a21f82",
-    "comment": "WEATHER_API_KEY key will exprire on 2020-06-01"
+    "README": "WEATHER_API_KEY key will exprire on 2020-06-01"
 }

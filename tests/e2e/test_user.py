@@ -46,7 +46,7 @@ class TestUser(unittest.TestCase):
         user = self.create_user()
         user = user["data"]
 
-        result = self.client.get("/")
+        result = self.client.get("/whoami")
         assert result.status_code == 200
 
         result = result.get_json()

@@ -6,7 +6,8 @@ application = create_app()
 
 create_dummy_database = False
 
-if application.config["DEBUG"] and create_dummy_database:
+recreate_database = application.config.get("RECREATE_DATABASE", False)
+if recreate_database:
 
     import random
     import datetime
@@ -19,7 +20,7 @@ if application.config["DEBUG"] and create_dummy_database:
         db.create_all()
 
         for role in Role.roles():
-            for uid in range(1, 11):
+            for uid in range(1, 4):
                 user_data = {"username": "{}{}".format(role, uid),
                              "password": "password{}".format(uid)}
                 user = User.create(user_data)

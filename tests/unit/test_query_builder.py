@@ -1,7 +1,7 @@
 import random
 import string
 import unittest
-from app import create_app
+from app import create_app, db
 from app.utils.query_string import QueryString
 from app.utils.query_builder import QueryBuilder
 from app.modules.users.models import User
@@ -42,6 +42,9 @@ class TestQueryBuilder(unittest.TestCase):
 
         self.app.config["SERVER_NAME"] = "http://localhost"
         with self.app.app_context():
+            db.drop_all()
+            db.create_all()
+
             qb = QueryBuilder(qs, User)
             qb.build_query()
 
