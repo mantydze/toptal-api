@@ -73,3 +73,17 @@ coverage html
 | Update run | /runs/{`run_id`} | PUT | {"date": "`{2020-03-14}`", "duration": `3600`, "distance": `1000`, "latitude": `4.4`, "longitude": `3.3`} |
 | Delete run | /runs/{`run_id`} | DELETE |  |
 
+## Filtering, sorting, pagination
+Endpoints which return list of rows (/users, /runs) support filtering operations described below
+
+| action | parameter | explanation |
+|------------------------|--------------------------------------------------------------|------------------------------------------------------------------|
+| Filtering | ?filter=(`field1` ge `1`) OR ((`field2` lt `99`) AND (`field2` ne `66`)) | (`field1` > `1`) or ((`field2` < `99`) and (`field2` != `66`)) |
+| Filtering operator | eq is ==, ne is !=, lt is <, le is <=, gt is >, ge is >= | lower case only |
+| Filtering conjunctions | AND, OR | UPPER CASE ONLY |
+| Sorting | ?sort=`field1` | Ascending order |
+|  | ?sort=`-field2` | Descending order (see dash in front) |
+|  | ?sort=`field1`,`-field2` | Sort by `field1` in ASC order and then by `field2` in DESC order |
+| Pagination | ?page[size]=`10` | 10 rows per page |
+|  | &page[number]=`2` | second page |
+
