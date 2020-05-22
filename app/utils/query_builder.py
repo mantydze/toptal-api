@@ -88,7 +88,6 @@ class QueryBuilder:
         # Apply all filters if any
         if self.qs.filter:
             crt = build_criterion(self.qs.filter)
-            print(crt)
             self.q = self.q.filter(crt)
 
     def _apply_pagination(self):
