@@ -29,6 +29,24 @@ coverage run tests.py --config_path testing-config.json
 coverage html
 ```
 
+## Endpoints
+
+|                                    | endpoint                  | method | payload                                                                                                                       |
+|------------------------------------|---------------------------|--------|-------------------------------------------------------------------------------------------------------------------------------|
+| Register new user                  | /register                 | POST   | {"username": "`my_name`", "password": "`my_pass`"}                                                                            |
+| Login user                         | /login                    | POST   | {"username": "`my_name`", "password": "`my_pass`"}                                                                            |
+| Logout current user                | /logout                   | GET    |                                                                                                                               |
+| Info about current user            | /whoami                   | GET    |                                                                                                                               |
+| List of users                      | /users                    | GET    |                                                                                                                               |
+| Create new user (same as register) | /users                    | POST   |                                                                                                                               |
+| Update user                        | /users/{`user_id`}        | PUT    | {"username": "`my_name`", "password": "`my_pass`", "role": "`user/manager/admin`"}                                            |
+| Delete user                        | /users/{`user_id`}        | DELETE |                                                                                                                               |
+| User report per year-week          | /users/{`user_id`}/report | GET    |                                                                                                                               |
+| List of runs                       | /runs                     | GET    |                                                                                                                               |
+| Create new run                     | /runs                     | POST   | {"user_id": `{123}`, "date": "`{2020-03-14}`", "duration": `3600`, "distance": `1000`, "latitude": `4.4`, "longitude": `3.3`} |
+| Update run                         | /runs/{`run_id`}          | PUT    | {"date": "`{2020-03-14}`", "duration": `3600`, "distance": `1000`, "latitude": `4.4`, "longitude": `3.3`}                     |
+| Delete run                         | /runs/{`run_id`}          | DELETE |                                                                                                                               |
+
 ## About
 
 ### Project requirements
