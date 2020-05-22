@@ -32,6 +32,10 @@ class User(db.Model, BaseMixin):
                                 user_id=self.user_id,
                                 _external=True)
 
+        links["report"] = url_for("users_route.get_user_report",
+                                  user_id=self.user_id,
+                                  _external=True)
+
         runs = url_for("runs_route.get_runs", _external=True)
         links["runs"] = "{}?filter=(user_id eq {})".format(runs, self.user_id)
 

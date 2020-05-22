@@ -48,10 +48,12 @@ class QueryBuilder:
 
             op = expression[1].lower()
 
+            criterions = []
             if op in ["and", "or"]:
-                # Recursively build left and right branches for logical join
-                left = build_criterion(expression[0])
-                right = build_criterion(expression[2])
+
+                for i in range(0, len(expression), 2):
+                    # Recursively build criterion branches for logical join
+                    criterions.append(build_criterion(expression[i]))
 
                 op_func = or_ if op == "or" else and_
 
@@ -74,14 +76,20 @@ class QueryBuilder:
                 if isinstance(right, str):
                     right = right.replace("'", "")
 
+                criterions.append(left)
+                criterions.append(right)
+
             else:
                 raise BadRequest("Unknown filter operator '{}'".format(op))
 
-            return op_func(left, right)
+            # return op_func(left, right)
+            return op_func(*criterions)
 
         # Apply all filters if any
         if self.qs.filter:
-            self.q = self.q.filter(build_criterion(self.qs.filter))
+            crt = build_criterion(self.qs.filter)
+            print(crt)
+            self.q = self.q.filter(crt)
 
     def _apply_pagination(self):
         """ Applies Pagination to a query.

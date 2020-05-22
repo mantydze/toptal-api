@@ -154,8 +154,8 @@ def delete(user_id):
 
 @users_route.route("/users/<int:user_id>/report")
 @login_required
-def get_user_reports(user_id):
-    """ Return User by ID """
+def get_user_report(user_id):
+    """ Return Report of a User """
 
     # USER can only READ own profile
     if current_user.role == Role.USER and current_user.user_id != user_id:
@@ -196,6 +196,8 @@ def get_user_reports(user_id):
         link_runs += "?filter=(date ge '{}') AND (date le '{}')".format(
             monday.strftime('%Y-%m-%d'),
             sunday.strftime('%Y-%m-%d'))
+
+        link_runs += " AND (user_id eq {})".format(user_id)
 
         # Year and iso week number
         # https://www.epochconverter.com/weeks/2019

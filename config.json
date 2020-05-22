@@ -1,5 +1,5 @@
 {
-    "DEBUG": true,
+    "DEBUG": false,
     "TESTING": false,
     "PORT": 4567,
 
@@ -16,7 +16,7 @@
 
     "SECRET_KEY": "<replace with a secret key>",
 
-    "DEBUG_TB_PROFILER_ENABLED": true,
+    "DEBUG_TB_PROFILER_ENABLED": false,
     "DEBUG_TB_INTERCEPT_REDIRECTS": false,
 
     "JSON_SORT_KEYS": false,

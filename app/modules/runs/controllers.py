@@ -23,6 +23,9 @@ def get_runs():
     qs = QueryString(request.query_string.decode("utf-8"))
     qs.parse()
 
+    print(qs.get_querystring())
+    print(qs.filter)
+
     qb = QueryBuilder(qs, Run)
     qb.build_query(apply_pagination=False)
 
@@ -32,7 +35,7 @@ def get_runs():
         qb.q = qb.q.filter(Run.user_id == current_user.user_id)
 
     qb._apply_pagination()
-
+    print(qb.q)
     models = qb.q.all()
     runs = [model.to_dict() for model in models]   # Serialize Models into JSON
 

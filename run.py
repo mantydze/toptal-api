@@ -22,7 +22,7 @@ if recreate_database:
         for role in Role.roles():
             for uid in range(1, 4):
                 user_data = {"username": "{}{}".format(role, uid),
-                             "password": "password{}".format(uid)}
+                             "password": "{}{}".format(role, uid)}
                 user = User.create(user_data)
 
                 for rid in range(1, uid+1):
