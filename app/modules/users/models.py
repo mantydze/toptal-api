@@ -13,15 +13,13 @@ class User(db.Model, BaseMixin):
 
     # List of attributes to serialize to JSON
     public = ["user_id", "username", "links", "role"]
-    private = ["role", "password", "authenticated"]
 
     user_id = db.Column(db.Integer, nullable=False, primary_key=True)
     username = db.Column(db.String, nullable=False, unique=True, index=True)
     password = db.Column(db.String, nullable=False)
     role = db.Column(db.String, nullable=False)
-    authenticated = db.Column(db.Boolean, default=False)
 
-    runs = db.relationship("Run", backref="user", lazy="dynamic")
+    runs = db.relationship("Run", backref="user", lazy="dynamic", cascade="delete")
 
     @hybrid_property
     def links(self):
@@ -36,8 +34,9 @@ class User(db.Model, BaseMixin):
                                   user_id=self.user_id,
                                   _external=True)
 
-        runs = url_for("runs_route.get_runs", _external=True)
-        links["runs"] = "{}?filter=(user_id eq {})".format(runs, self.user_id)
+        links["runs"] = url_for("runs_route.get_user_runs",
+                                user_id=self.user_id,
+                                _external=True)
 
         return links
 
@@ -87,7 +86,7 @@ class User(db.Model, BaseMixin):
             db.session.rollback()
             raise
 
-    def update(self, input_json, commit=True):
+    def update(self, input_json={}, commit=True):
         """ Create new Run. Fetch weather
 
             Parameters
@@ -116,27 +115,13 @@ class User(db.Model, BaseMixin):
     def delete(self):
         """ Delete current User """
 
+        from app.modules.auth.controllers import logout
+
+        logout()
+
         try:
             db.session.delete(self)
             db.session.commit()
         except Exception:
             db.session.rollback()
             raise
-
-    # Login Manager
-
-    def is_active(self):
-        """ Returns always True. Assume that all users are active """
-        return True
-
-    def get_id(self):
-        """ Returns unique identifier """
-        return self.username
-
-    def is_authenticated(self):
-        """ Returns True if the user is authenticated """
-        return self.authenticated
-
-    def is_anonymous(self):
-        """ Anonymous usage of this API is not supported """
-        return False

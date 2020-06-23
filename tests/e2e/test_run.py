@@ -25,6 +25,7 @@ class TestRun(unittest.TestCase):
         return self.create_user(Role.ADMIN, login)
 
     def create_user(self, role=Role.USER, login=True):
+        self.client.environ_base.pop("HTTP_AUTHORIZATION", None)
         name = "".join(random.choice(string.ascii_letters) for i in range(8))
         data = {"username": name, "password": name}
         user = self.client.post("/register", json=data)
@@ -37,6 +38,8 @@ class TestRun(unittest.TestCase):
 
         if login:
             user = self.client.post("/login", json=data)
+            access_token = "Bearer " + user.get_json()["data"]["access_token"]
+            self.client.environ_base["HTTP_AUTHORIZATION"] = access_token
 
         return user.get_json()
 
@@ -74,7 +77,7 @@ class TestRun(unittest.TestCase):
 
         result = self.client.post("/runs", json=run_data)
 
-        assert result.status_code == 200
+        assert result.status_code == 201
 
     def test_03_create_run_user_other(self):
         """ Login as USER and create Run for other USER """
@@ -112,7 +115,7 @@ class TestRun(unittest.TestCase):
 
         result = self.client.post("/runs", json=run_data)
 
-        assert result.status_code == 200
+        assert result.status_code == 201
 
     def test_05_create_run_invalid_data(self):
         """ Login as USER and create Run with invalid data """
@@ -166,7 +169,7 @@ class TestRun(unittest.TestCase):
         }
 
         result = self.client.post("/runs", json=run_data)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
         runs = self.client.get("/runs")
         assert runs.status_code == 200
@@ -186,7 +189,7 @@ class TestRun(unittest.TestCase):
         }
 
         run = self.client.post("/runs", json=run_data)
-        assert run.status_code == 200
+        assert run.status_code == 201
 
         run_id = run.get_json()["data"]["run_id"]
         result = self.client.get("/runs/{}".format(run_id))
@@ -207,7 +210,7 @@ class TestRun(unittest.TestCase):
         }
 
         run = self.client.post("/runs", json=run_data)
-        assert run.status_code == 200
+        assert run.status_code == 201
 
         self.create_user()
 
@@ -230,7 +233,7 @@ class TestRun(unittest.TestCase):
         }
 
         run = self.client.post("/runs", json=run_data)
-        assert run.status_code == 200
+        assert run.status_code == 201
 
         run_id = run.get_json()["data"]["run_id"]
         result = self.client.delete("/runs/{}".format(run_id))
@@ -251,7 +254,7 @@ class TestRun(unittest.TestCase):
         }
 
         run = self.client.post("/runs", json=run_data)
-        assert run.status_code == 200
+        assert run.status_code == 201
 
         self.create_user()
 
@@ -274,7 +277,7 @@ class TestRun(unittest.TestCase):
         }
 
         result1 = self.client.post("/runs", json=run1_data)
-        assert result1.status_code == 200
+        assert result1.status_code == 201
 
         run1 = result1.get_json()["data"]
         run_id = run1["run_id"]
@@ -312,7 +315,7 @@ class TestRun(unittest.TestCase):
         }
 
         run = self.client.post("/runs", json=run_data)
-        assert run.status_code == 200
+        assert run.status_code == 201
 
         self.create_user()
 
@@ -321,6 +324,41 @@ class TestRun(unittest.TestCase):
         run_id = run.get_json()["data"]["run_id"]
         result = self.client.put("/runs/{}".format(run_id), json=run_data)
         assert result.status_code == 403
+
+    def test_14_create_invalid_run(self):
+        """ Login as USER and create invalid run"""
+
+        user = self.create_user()
+
+        run_data = {
+            "user_id": user["data"]["user_id"],
+            "date": "3030-03-03",
+            "duration": -10,
+            "distance": -10,
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        run = self.client.post("/runs", json=run_data)
+        assert run.status_code == 400
+
+    def test_15_create_valid_run_nested_endpoint(self):
+        """ Login as USER and create using nested enpoint run"""
+
+        user = self.create_user()
+
+        run_data = {
+            "date": datetime.date.today().isoformat(),
+            "duration": random.randint(100, 1000),
+            "distance": random.randint(100, 1000),
+            "latitude": 54.687157,
+            "longitude": 25.279652
+        }
+
+        run = self.client.post(
+            "/users/{}/runs".format(user["data"]["user_id"]), json=run_data)
+
+        assert run.status_code == 201
 
     @classmethod
     def tearDownClass(cls):

@@ -4,6 +4,8 @@
 
 Python3 based REST API that tracks jogging times of users.
 
+[Live demo](http://ec2-3-22-167-81.us-east-2.compute.amazonaws.com:4567/)
+
 ### Project requirements
 
 - API Users must be able to create an account and log in.
@@ -40,6 +42,20 @@ python run.py --config_path config.json
 ```
 Open in a browser [http://localhost:4567/](http://localhost:4567/)
 
+### Run application with UWSGI
+
+- install `uwsgi` from your OS distribution
+- install uwsgi python plugin `pip install uwsgi`
+
+Edit or make a copy of `aws-uwsgi.ini` file
+- change `http-socket` to any port you like
+- change `chdir` to your working directory
+- change `deamonize` to your log location
+
+```
+uwsgi --ini aws-uwsgi.ini
+```
+
 ### Run tests
 ```
 coverage run tests.py --config_path testing-config.json
@@ -55,13 +71,53 @@ coverage html
 
 - Run `python run.py --config_path config.json`
 
-## Endpoints
+## Authentication Endpoints
 
-|  | endpoint | method | payload |
+| action | endpoint | method | payload |
 |------------------------------------|---------------------------|--------|-------------------------------------------------------------------------------------------------------------------------------|
 | Register new user | /register | POST | {"username": "`my_name`", "password": "`my_pass`"} |
 | Login user | /login | POST | {"username": "`my_name`", "password": "`my_pass`"} |
 | Logout current user | /logout | GET |  |
+
+### Authentication
+API implements JWT authorization mechanism:
+After successfull `/login` server returns a response with some user informatin and a `access_token`. This token can be used for authorization via headers for next API calls.
+
+```
+# Response body after successful login
+{
+    "data": {
+        "user_id": 7,
+        "username": "admin1",
+        "role": "admin",
+        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1OTA1MTM4NDIsIm5iZiI6MTU5MDUxMzg0MiwianRpIjoiNWQzZGIwODUtNjdhMy00ODk4LWJjN2EtOTQ5ZTA4NWJkYjkyIiwiZXhwIjoxNTkwNTE0NzQyLCJpZGVudGl0eSI6InVzZXIxIiwiZnJlc2giOmZhbHNlLCJ0eXBlIjoiYWNjZXNzIn0.J1ogi2y2OF-N6JhNpizkVzmJTFYl7kiOELRa4wv-L2A"
+    }
+}
+```
+
+Simple usecase
+```
+import requests
+
+# API url
+url = "http://localhost:4567"
+
+# Login
+credentials = {"username": "admin1", "password": "admin1"}
+login_response = requests.post(url+"/login", json=credentials)
+token = login_response.json()["data"]["access_token"]
+
+# API call using headers and auth token
+headers = {"Authorization": "Bearer " + token}
+whoami_response = requests.get(url+"/whoami", headers=headers)
+
+print(whoami_response.json())
+```
+
+## Data Endpoints
+
+| action | endpoint | method | payload |
+|------------------------------------|---------------------------|--------|-------------------------------------------------------------------------------------------------------------------------------|
 | Info about current user | /whoami | GET |  |
 | List of users | /users | GET |  |
 | Create new user (same as register) | /users | POST |  |
@@ -69,7 +125,9 @@ coverage html
 | Delete user | /users/{`user_id`} | DELETE |  |
 | User report per year-week | /users/{`user_id`}/report | GET |  |
 | List of runs | /runs | GET |  |
+| List of user runs | /users/{`user_id`}/runs | GET |  |
 | Create new run | /runs | POST | {"user_id": `{123}`, "date": "`{2020-03-14}`", "duration": `3600`, "distance": `1000`, "latitude": `4.4`, "longitude": `3.3`} |
+| Create new for a user run | /users/{`user_id`}/runs | POST | {"date": "`{2020-03-14}`", "duration": `3600`, "distance": `1000`, "latitude": `4.4`, "longitude": `3.3`} |
 | Update run | /runs/{`run_id`} | PUT | {"date": "`{2020-03-14}`", "duration": `3600`, "distance": `1000`, "latitude": `4.4`, "longitude": `3.3`} |
 | Delete run | /runs/{`run_id`} | DELETE |  |
 

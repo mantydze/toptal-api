@@ -1,5 +1,5 @@
 {
-    "DEBUG": false,
+    "DEBUG": true,
     "TESTING": false,
     "PORT": 4567,
 
@@ -13,7 +13,8 @@
         "pool_recycle": 300,
         "max_overflow": 100
     },
-
+    "JWT_SECRET_KEY": "change me super secret key",
+    "JWT_BLACKLIST_ENABLED": true,
     "SECRET_KEY": "<replace with a secret key>",
 
     "DEBUG_TB_PROFILER_ENABLED": false,

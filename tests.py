@@ -4,11 +4,8 @@ if __name__ == "__main__":
     loader = TestLoader()
     suite = loader.discover("tests")
 
-    # from tests.e2e.test_db import TestDB
-    # suite = loader.loadTestsFromTestCase(TestDB)
-
     # from tests.e2e.test_user import TestUser
-    # suite = loader.loadTestsFromTestCase(TesUser)
+    # suite = loader.loadTestsFromTestCase(TestUser)
 
     # from tests.unit.test_query_string import TestQueryString
     # suite = loader.loadTestsFromTestCase(TestQueryString)

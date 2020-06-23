@@ -25,6 +25,7 @@ class TestUser(unittest.TestCase):
         return self.create_user(Role.ADMIN, login)
 
     def create_user(self, role=Role.USER, login=True):
+        self.client.environ_base.pop("HTTP_AUTHORIZATION", None)
         name = "".join(random.choice(string.ascii_letters) for i in range(8))
         data = {"username": name, "password": name}
         user = self.client.post("/register", json=data)
@@ -37,6 +38,8 @@ class TestUser(unittest.TestCase):
 
         if login:
             user = self.client.post("/login", json=data)
+            access_token = "Bearer " + user.get_json()["data"]["access_token"]
+            self.client.environ_base["HTTP_AUTHORIZATION"] = access_token
 
         return user.get_json()
 
@@ -49,9 +52,7 @@ class TestUser(unittest.TestCase):
         result = self.client.get("/whoami")
         assert result.status_code == 200
 
-        result = result.get_json()
-
-        assert user["username"] == result["username"]
+        assert user["username"] == result.get_json()["username"]
 
     def test_010_user_view_users(self):
         """ Login as USER and access endpoint /users """
@@ -131,7 +132,7 @@ class TestUser(unittest.TestCase):
     def test_032_user_update_user(self):
         """ Login as USER and update USER """
 
-        user = self.create_user(login=False)
+        user = self.create_user()
         user_id = user["data"]["user_id"]
         self.create_user()
         data = {"username": "user111", "password": "password11"}
@@ -142,7 +143,7 @@ class TestUser(unittest.TestCase):
     def test_033_user_update_duplicate(self):
         """ Login as USER and update self with duplicate name """
 
-        user = self.create_user(login=False)
+        user = self.create_user()
         data = {"username": user["data"]["username"], "password": "password11"}
 
         my_user = self.create_user()
@@ -357,6 +358,52 @@ class TestUser(unittest.TestCase):
         self.create_manager()
         result = self.client.get("/users/{}/report".format(manager_id))
         assert result.status_code == 403
+
+    def test_093_user_create_manager(self):
+        """ Login as user and create user with Manager role"""
+
+        self.create_user()
+        name = "".join(random.choice(string.ascii_letters) for i in range(8))
+        data = {"username": name, "password": name, "role": "manager"}
+        result = self.client.post("/users", json=data)
+        assert result.status_code == 400
+
+    def test_093_manager_create_manager(self):
+        """ Login as Manager and create user with Manager role"""
+
+        self.create_manager()
+        name = "".join(random.choice(string.ascii_letters) for i in range(8))
+        data = {"username": name, "password": name, "role": "manager"}
+        result = self.client.post("/users", json=data)
+        assert result.status_code == 201
+
+    def test_094_manager_create_admin(self):
+        """ Login as Manager and create user with Admin role"""
+
+        self.create_manager()
+        name = "".join(random.choice(string.ascii_letters) for i in range(8))
+        data = {"username": name, "password": name, "role": "admin"}
+        result = self.client.post("/users", json=data)
+
+        assert result.status_code == 400
+
+    def test_095_admin_create_manager(self):
+        """ Login as Admin and create user with Manager role"""
+
+        self.create_admin()
+        name = "".join(random.choice(string.ascii_letters) for i in range(8))
+        data = {"username": name, "password": name, "role": "manager"}
+        result = self.client.post("/users", json=data)
+        assert result.status_code == 201
+
+    def test_096_admin_create_admin(self):
+        """ Login as Admin and create user with Admin role"""
+
+        self.create_admin()
+        name = "".join(random.choice(string.ascii_letters) for i in range(8))
+        data = {"username": name, "password": name, "role": "admin"}
+        result = self.client.post("/users", json=data)
+        assert result.status_code == 201
 
     @classmethod
     def tearDownClass(cls):

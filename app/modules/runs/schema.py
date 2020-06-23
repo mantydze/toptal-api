@@ -3,8 +3,8 @@ schema_create_run = {
     "properties": {
         "user_id": {"type": "number"},
         "date": {"type": "string", "format": "date"},
-        "duration": {"type": "number"},
-        "distance": {"type": "number"},
+        "duration": {"type": "number", "minimum": 1},
+        "distance": {"type": "number", "minimum": 1},
         "latitude": {"type": "number", "minimum": -90, "maximum": 90},
         "longitude": {"type": "number", "minimum": -180, "maximum": 180}
     },
@@ -17,8 +17,8 @@ schema_update_run = {
     "type": "object",
     "properties": {
         "date": {"type": "string", "format": "date"},
-        "duration": {"type": "number"},
-        "distance": {"type": "number"},
+        "duration": {"type": "number", "minimum": 1},
+        "distance": {"type": "number", "minimum": 1},
         "latitude": {"type": "number", "minimum": -90, "maximum": 90},
         "longitude": {"type": "number", "minimum": -180, "maximum": 180}
     },

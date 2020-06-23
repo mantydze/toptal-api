@@ -4,5 +4,6 @@ Flask-SQLAlchemy==2.2
 jsonschema==3.2.0
 flask-debugtoolbar==0.11.0
 pytest-cov==2.8.1
-flask-login==0.4.1
 requests==2.23.0
+coverage==5.1
+flask-jwt-extended==3.24.1

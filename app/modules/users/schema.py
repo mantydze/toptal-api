@@ -4,7 +4,8 @@ schema_create_user = {
     "type": "object",
     "properties": {
         "username": {"type": "string", "minLength": 4, "maxLength": 20},
-        "password": {"type": "string", "minLength": 4, "maxLength": 20}
+        "password": {"type": "string", "minLength": 4, "maxLength": 20},
+        "role": {"enum": Role.roles()}
     },
     "required": ["username", "password"],
     "additionalProperties": False

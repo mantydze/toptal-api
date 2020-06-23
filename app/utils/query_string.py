@@ -91,6 +91,8 @@ class QueryString:
         'sort'
     )
 
+    MAX_PAGE_SIZE = 1000
+
     def __init__(self, query_string, valid_fields=None):
         self.parser = QSParser()
         self.qs = unquote(query_string) if query_string is not None else ""
@@ -162,6 +164,10 @@ class QueryString:
         if value <= 0:
             raise BadRequest(""" Pagination: expected positive value,
                                  received '{}'""".format(value))
+
+        if key == "size" and value > QueryString.MAX_PAGE_SIZE:
+            raise BadRequest(""" Pagination: max page size is limited to {}
+                            """.format(QueryString.MAX_PAGE_SIZE))
 
         self.page[key] = value
 

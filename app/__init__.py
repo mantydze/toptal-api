@@ -3,10 +3,9 @@
 
 import traceback
 import sqlalchemy
-import flask_login
-from flask_login import current_user, login_required
-
-from flask import Flask, jsonify
+from flask_jwt_extended import (
+    JWTManager, jwt_required, current_user, get_jwt_identity, jwt_optional)
+from flask import Flask, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_debugtoolbar import DebugToolbarExtension
 from werkzeug.exceptions import InternalServerError, HTTPException
@@ -14,7 +13,7 @@ from app.utils.config_loader import load_config
 
 db = SQLAlchemy()
 toolbar = DebugToolbarExtension()
-login_manager = flask_login.LoginManager()
+jwt = JWTManager()
 
 
 def handle_error(error):
@@ -65,7 +64,7 @@ def create_app():
     db.init_app(app)
 
     # Login Manager
-    login_manager.init_app(app)
+    jwt.init_app(app)
 
     @app.before_first_request
     def create_db_schema():
@@ -75,13 +74,25 @@ def create_app():
 
     # Index page
     @app.route("/")
+    @jwt_optional
     def index():
         """ Index page """
-        return jsonify({})
+        if get_jwt_identity() is None:
+            ret = {"message": "Hello anonymous, please register or login"}
+        else:
+            ret = {"message": "Hello {}".format(current_user.username)}
+            ret["links"] = {
+                "whoami": url_for("whoami", _external=True),
+                "users": url_for("users_route.get_users", _external=True),
+                "runs": url_for("runs_route.get_runs", _external=True)
+            }
+
+        return jsonify(ret)
 
     @app.route("/whoami")
-    @login_required
+    @jwt_required
     def whoami():
+        """Little bit redundant endpoint, but still nice to have"""
         return jsonify(current_user.to_dict())
 
     @app.errorhandler(sqlalchemy.exc.OperationalError)

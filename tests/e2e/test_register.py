@@ -20,7 +20,7 @@ class TestRegister(unittest.TestCase):
 
         data = {"username": "user", "password": "password"}
         result = self.client.post("/register", json=data)
-        assert result.status_code == 200
+        assert result.status_code == 201
 
     def test_02_register_duplicate(self):
         """ Register with duplicate username """

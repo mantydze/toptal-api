@@ -10,7 +10,8 @@ from app.utils.query_builder import QueryBuilder
 from app.utils.jsonschema_validator import validate
 from flask import jsonify, request, redirect, url_for
 from flask.blueprints import Blueprint
-from flask_login import login_required, current_user
+from flask_jwt_extended import (
+    jwt_required, current_user, jwt_optional, get_jwt_identity)
 from sqlalchemy import or_, func
 from werkzeug.exceptions import BadRequest, Forbidden
 
@@ -18,7 +19,7 @@ users_route = Blueprint("users_route", __name__)
 
 
 @users_route.route("/users")
-@login_required
+@jwt_required
 def get_users():
     """ Return list of Users depending on privileges User has.
         USER is redirected to own profile
@@ -51,7 +52,7 @@ def get_users():
 
 
 @users_route.route("/users/<int:user_id>")
-@login_required
+@jwt_required
 def get_user(user_id):
     """ Return User by ID """
 
@@ -71,6 +72,7 @@ def get_user(user_id):
 
 @users_route.route("/register", methods=["POST"])
 @users_route.route("/users", methods=["POST"])
+@jwt_optional
 def create():
     """ Register/Create new User """
 
@@ -87,13 +89,26 @@ def create():
     if user:
         raise BadRequest("Username '{}' is already taken".format(username))
 
+    if get_jwt_identity() is not None:
+        if "role" in input_json:
+            role = input_json["role"]
+
+            if current_user.role == Role.USER:
+                raise BadRequest("User cannot change roles")
+
+            # Manager can only deal with USER and MANAGER Roles
+            if current_user.role == Role.MANAGER and role == Role.ADMIN:
+                raise BadRequest("Manager cannot promote anyone to Admins")
+    else:
+        input_json["role"] = Role.USER
+
     user = User.create(input_json)
 
-    return jsonify(data=user.to_dict())
+    return jsonify(data=user.to_dict()), 201
 
 
 @users_route.route("/users/<int:user_id>", methods=["PUT"])
-@login_required
+@jwt_required
 def update_user(user_id):
     """ Update User """
 
@@ -132,7 +147,7 @@ def update_user(user_id):
 
 
 @users_route.route("/users/<int:user_id>", methods=["DELETE"])
-@login_required
+@jwt_required
 def delete(user_id):
     """ Delete User """
 
@@ -153,7 +168,7 @@ def delete(user_id):
 
 
 @users_route.route("/users/<int:user_id>/report")
-@login_required
+@jwt_required
 def get_user_report(user_id):
     """ Return Report of a User """
 
@@ -192,12 +207,12 @@ def get_user_report(user_id):
         sunday = monday + datetime.timedelta(days=6)
 
         # Link to a list of runs which were used for that week report
-        link_runs = url_for("runs_route.get_runs", _external=True)
+        link_runs = url_for("runs_route.get_user_runs",
+                            user_id=user_id,
+                            _external=True)
         link_runs += "?filter=(date ge '{}') AND (date le '{}')".format(
             monday.strftime('%Y-%m-%d'),
             sunday.strftime('%Y-%m-%d'))
-
-        link_runs += " AND (user_id eq {})".format(user_id)
 
         # Year and iso week number
         # https://www.epochconverter.com/weeks/2019

@@ -30,10 +30,12 @@ class TestLogout(unittest.TestCase):
         # Create valid user first
         self.client.post("/register", json=data)
 
-        self.client.post("/login", json=data)
+        result = self.client.post("/login", json=data)
+        auth_token = "Bearer " + result.get_json()["data"]["access_token"]
+        headers = {"Authorization":  auth_token}
 
         # Session cookie is attached to the test client
-        logout = self.client.get("/logout", json=data)
+        logout = self.client.get("/logout", json=data, headers=headers)
 
         assert logout.status_code == 204
 

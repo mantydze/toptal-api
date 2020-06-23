@@ -92,6 +92,11 @@ class TestQueryString(unittest.TestCase):
 
         assert all(part in qstring for part in qs_parts)
 
+    def test_13_invalid_paginate(self):
+        """ Parse invalid pagination. Exceeding max page size """
+        qs = QueryString("?page[size]=9999999")
+        self.assertRaises(BadRequest, qs.parse)
+
     @classmethod
     def tearDownClass(cls):
         pass

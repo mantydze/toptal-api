@@ -5,6 +5,7 @@ from app import db
 from app.utils.base_mixin import BaseMixin
 from app.utils.json_column import JsonColumn
 from app.utils.weather_api import get_weather
+from werkzeug.exceptions import BadRequest
 
 
 class Run(db.Model, BaseMixin):
@@ -61,8 +62,11 @@ class Run(db.Model, BaseMixin):
         input_json["weather"] = None
 
         try:
-            input_json["date"] = datetime.strptime(
-                input_json["date"], "%Y-%m-%d")
+            dt = datetime.strptime(input_json["date"], "%Y-%m-%d")
+            if (dt.date() > datetime.today().date()):
+                raise BadRequest("Date cannot be in future")
+
+            input_json["date"] = dt
 
             # Get weather condition from Weather API. Returns JSON or None
             input_json["weather"] = get_weather(input_json["latitude"],
@@ -92,7 +96,10 @@ class Run(db.Model, BaseMixin):
 
         try:
             if "date" in input_json:
-                self.date = datetime.strptime(input_json["date"], "%Y-%m-%d")
+                dt = datetime.strptime(input_json["date"], "%Y-%m-%d")
+                if (dt.date() > datetime.today().date()):
+                    raise BadRequest("Date cannot be in future")
+                self.date = dt
 
             if "distance" in input_json:
                 self.distance = input_json["distance"]
